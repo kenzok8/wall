@@ -33,7 +33,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3.13
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  job_AdGuardHome:
+  job_adguardhome:
     if: ${{ always() }}
     needs: job_init
     runs-on: ubuntu-latest
@@ -48,10 +48,10 @@ jobs:
           cd && mkdir -p main && cd main
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check AdGuardHome
+      - name: Check adguardhome
         id: check
         run: |
-          cd && cd work/adguardhome/adguardhome/AdGuardHome
+          cd && cd work/adguardhome/adguardhome/adguardhome
           Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
@@ -59,22 +59,22 @@ jobs:
           
           if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
 
-      - name: Update AdGuardHome
+      - name: Update adguardhome
         id: update
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
-          cd && cd work/adguardhome/adguardhome/AdGuardHome
+          cd && cd work/adguardhome/adguardhome/adguardhome
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
-          cd && cd main && mkdir -p AdGuardHome && cd AdGuardHome
+          cd && cd main && mkdir -p adguardhome && cd adguardhome
           wget -P / https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
-          cd && cd work/adguardhome/adguardhome/AdGuardHome
+          cd && cd work/adguardhome/adguardhome/adguardhome
           sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
-          echo "已更新 AdGuardHome 版本到: $New_PKG_VERSION"
-          echo "AdGuardHome Hash:$PKG_HASH"
+          echo "已更新 adguardhome 版本到: $New_PKG_VERSION"
+          echo "adguardhome Hash:$PKG_HASH"
           cd && cd main
-          echo ":white_check_mark: AdGuardHome: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo ":white_check_mark: adguardhome: update to $New_PKG_VERSION" >> commit_messages.txt
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
 
       - name: Git Auto Commit
@@ -83,12 +83,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          commit_message: "AdGuardHome: update to ${{ steps.update.outputs.version }}"
+          commit_message: "adguardhome: update to ${{ steps.update.outputs.version }}"
           branch: main
 
   job_smartdns:
     if: ${{ always() }}
-    needs: job_AdGuardHome
+    needs: job_adguardhome
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
