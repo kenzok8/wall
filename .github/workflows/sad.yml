@@ -49,29 +49,29 @@ jobs:
           sudo timedatectl set-timezone "$TZ"
 
       - name: Check AdGuardHome
-        id: AdGuardHome
+        id: check
         run: |
           cd && cd work/adguardhome/adguardhome/AdGuardHome
           Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-          echo "目前版本：$Old_PKG_VERSION"
-          echo "最新版本：$New_PKG_VERSION"
-              
+          echo "目前版本: $Old_PKG_VERSION"
+          echo "最新版本: $New_PKG_VERSION"
+          
           if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
 
       - name: Update AdGuardHome
         id: update
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
-          cd && cd work/adguardhome/adguardhome/AdGuardHome 
+          cd && cd work/adguardhome/adguardhome/AdGuardHome
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p AdGuardHome && cd AdGuardHome
           wget -P / https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
-          cd && cd work/adguardhome/adguardhome/AdGuardHome 
+          cd && cd work/adguardhome/adguardhome/AdGuardHome
           sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
-          echo "已更新AdGuardHome版本到: $New_PKG_VERSION"
+          echo "已更新 AdGuardHome 版本到: $New_PKG_VERSION"
           echo "AdGuardHome Hash:$PKG_HASH"
           cd && cd main
           echo ":white_check_mark: AdGuardHome: update to $New_PKG_VERSION" >> commit_messages.txt
@@ -104,7 +104,7 @@ jobs:
       - name: Check smartdns
         id: check
         run: |
-          cd && cd work/adguardhome/adguardhome/smartdns
+          cd && cd work/adguardhome/adguardhome//smartdns
           Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
@@ -122,7 +122,7 @@ jobs:
           cd && cd main && mkdir -p smartdns && cd smartdns
           wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
-          cd && cd work/adguardhome/adguardhome/smartdns
+          cd && cd work/adguardhome/adguardhome//smartdns
           sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 smartdns 版本到: $New_PKG_VERSION"
           echo "smartdns Hash:$PKG_HASH"
