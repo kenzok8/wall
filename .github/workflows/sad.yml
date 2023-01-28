@@ -1,0 +1,193 @@
+#
+# Copyright (c) 2022-2023 SMALLPROGRAM <https://github.com/smallprogram>
+# Description: Auto update main
+#
+name: "Auto update main"
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: "0 */4 * * *"
+env:
+  TZ: Asia/Shanghai
+
+
+jobs:
+  job_init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 1
+          keep_minimum_runs: 0
+
+      - name: SSH connection to Actions
+        uses: mxschmitt/action-tmate@v3.13
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+
+  job_AdGuardHome:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: 'main'
+
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p main && cd main
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Check AdGuardHome
+        id: AdGuardHome
+        run: |
+          cd && cd work/adguardhome/adguardhome/AdGuardHome
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          echo "目前版本：$Old_PKG_VERSION"
+          echo "最新版本：$New_PKG_VERSION"
+              
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+
+      - name: Update AdGuardHome
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd work/adguardhome/adguardhome/AdGuardHome 
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          cd && cd main && mkdir -p AdGuardHome && cd AdGuardHome
+          wget -P / https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v$New_PKG_VERSION
+          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          cd && cd work/adguardhome/adguardhome/AdGuardHome 
+          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          echo "已更新AdGuardHome版本到: $New_PKG_VERSION"
+          echo "AdGuardHome Hash:$PKG_HASH"
+          cd && cd main
+          echo ":white_check_mark: AdGuardHome: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Git Auto Commit
+        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "AdGuardHome: update to ${{ steps.update.outputs.version }}"
+          branch: main
+
+  job_smartdns:
+    if: ${{ always() }}
+    needs: job_AdGuardHome
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: 'main'
+
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p main && cd main
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Check smartdns
+        id: check
+        run: |
+          cd && cd work/adguardhome/adguardhome/smartdns
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          echo "目前版本: $Old_PKG_VERSION"
+          echo "最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+
+      - name: Update smartdns
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd work/adguardhome/adguardhome/smartdns
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          cd && cd main && mkdir -p smartdns && cd smartdns
+          wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/v$New_PKG_VERSION
+          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          cd && cd work/adguardhome/adguardhome/smartdns
+          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          echo "已更新 smartdns 版本到: $New_PKG_VERSION"
+          echo "smartdns Hash:$PKG_HASH"
+          cd && cd main
+          echo ":white_check_mark: smartdns: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Git Auto Commit
+        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "smartdns: update to ${{ steps.update.outputs.version }}"
+          branch: main
+          
+  job_mosdns:
+    if: ${{ always() }}
+    needs: job_AdGuardHome
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: 'main'
+
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p main && cd main
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Check mosdns
+        id: check
+        run: |
+          cd && cd work/adguardhome/adguardhome/mosdns
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/IrineSistiana/mosdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          echo "目前版本: $Old_PKG_VERSION"
+          echo "最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+
+      - name: Update mosdns
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd work/adguardhome/adguardhome/mosdns
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          cd && cd main && mkdir -p mosdns && cd mosdns
+          wget -P / https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$New_PKG_VERSION
+          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          cd && cd work/adguardhome/adguardhome/mosdns
+          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          echo "已更新 mosdns 版本到: $New_PKG_VERSION"
+          echo "mosdns Hash:$PKG_HASH"
+          cd && cd main
+          echo ":white_check_mark: mosdns: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Git Auto Commit
+        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "mosdns: update to ${{ steps.update.outputs.version }}"
+          branch: main
