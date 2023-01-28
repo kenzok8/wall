@@ -52,7 +52,7 @@ jobs:
         id: check
         run: |
           cd && cd work/wall/wall/adguardhome 
-          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '9p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
@@ -65,12 +65,12 @@ jobs:
         run: |
           cd && cd work/wall/wall/adguardhome 
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          sed -i "9c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p adguardhome && cd adguardhome
           wget -P / https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
           cd && cd work/wall/wall/adguardhome 
-          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "15c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 adguardhome版本到: $New_PKG_VERSION"
           echo "adguardhome Hash:$PKG_HASH"
           cd && cd main
@@ -105,7 +105,7 @@ jobs:
         id: check
         run: |
           cd && cd work/wall/wall/alist
-          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '10p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
@@ -118,12 +118,12 @@ jobs:
         run: |
           cd && cd work/wall/wall/alist
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          sed -i "10c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p alist && cd alist
           wget -P / https://codeload.github.com/alist-org/alist/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
           cd && cd work/wall/wall/alist
-          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "16c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 alist 版本到: $New_PKG_VERSION"
           echo "alist Hash:$PKG_HASH"
           cd && cd main
@@ -264,7 +264,7 @@ jobs:
         id: check
         run: |
           cd && cd work/wall/wall/smartdns
-          Old_PKG_VERSION=$(sed -n '9p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
@@ -277,12 +277,12 @@ jobs:
         run: |
           cd && cd work/wall/wall/smartdns
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          sed -i "9c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p smartdns && cd smartdns
           wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
           cd && cd work/wall/wall/smartdns
-          sed -i "14c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 smartdns 版本到: $New_PKG_VERSION"
           echo "smartdns Hash:$PKG_HASH"
           cd && cd main
@@ -335,7 +335,7 @@ jobs:
           wget -P / https://codeload.github.com/upx/upx/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
           cd && cd work/wall/wall/upx
-          sed -i "15c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "16c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 upx 版本到: $New_PKG_VERSION"
           echo "upx Hash:$PKG_HASH"
           cd && cd main
@@ -370,7 +370,7 @@ jobs:
         id: check
         run: |
           cd && cd work/wall/wall/upx-static
-          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '6p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
@@ -383,12 +383,12 @@ jobs:
         run: |
           cd && cd work/wall/wall/upx-static
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          sed -i "6c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p upx-static && cd upx-static
           wget -P / https://codeload.github.com/upx/upx/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
           cd && cd work/wall/wall/upx-static
-          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "40c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 upx-static 版本到: $New_PKG_VERSION"
           echo "upx-static Hash:$PKG_HASH"
           cd && cd main
@@ -423,7 +423,7 @@ jobs:
         id: check
         run: |
           cd && cd work/wall/wall/UnblockNeteaseMusic
-          Old_PKG_VERSION=$(sed -n '9p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/UnblockNeteaseMusic/server/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
@@ -436,12 +436,12 @@ jobs:
         run: |
           cd && cd work/wall/wall/UnblockNeteaseMusic
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          sed -i "9c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p UnblockNeteaseMusic && cd UnblockNeteaseMusic
           wget -P / https://codeload.github.com/UnblockNeteaseMusic/server/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
           cd && cd work/wall/wall/UnblockNeteaseMusic
-          sed -i "14c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "15c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 UnblockNeteaseMusic 版本到: $New_PKG_VERSION"
           echo "UnblockNeteaseMusic Hash:$PKG_HASH"
           cd && cd main
