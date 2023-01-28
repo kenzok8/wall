@@ -104,7 +104,7 @@ jobs:
       - name: Check smartdns
         id: check
         run: |
-          cd && cd work/adguardhome/adguardhome//smartdns
+          cd && cd work/adguardhome/adguardhome/smartdns
           Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
@@ -122,7 +122,7 @@ jobs:
           cd && cd main && mkdir -p smartdns && cd smartdns
           wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/v$New_PKG_VERSION
           PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
-          cd && cd work/adguardhome/adguardhome//smartdns
+          cd && cd work/adguardhome/adguardhome/smartdns
           sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
           echo "已更新 smartdns 版本到: $New_PKG_VERSION"
           echo "smartdns Hash:$PKG_HASH"
