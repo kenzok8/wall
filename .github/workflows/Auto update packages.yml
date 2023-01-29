@@ -1251,4 +1251,57 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           commit_message: "redsocks2: update to ${{ steps.update.outputs.version }}"
-          branch: main 
+          branch: main
+          
+  job_lucky:
+    if: ${{ always() }}
+    needs: job_redsocks2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: 'main'
+      
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p main && cd main
+          sudo timedatectl set-timezone "$TZ"
+      
+      - name: Check lucky
+        id: check
+        run: |
+          cd && cd work/wall/wall/lucky
+          Old_PKG_VERSION=$(sed -n '11p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/gdy666/lucky/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          echo "目前版本: $Old_PKG_VERSION"
+          echo "最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+      
+      - name: Update lucky
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd work/wall/wall/lucky
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          sed -i "11c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          cd && cd main && mkdir -p lucky && cd lucky
+          wget -P / https://codeload.github.com/gdy666/lucky/tar.gz/v$New_PKG_VERSION
+          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          cd && cd work/wall/wall/lucky
+          sed -i "48c PKG_HASH:=$PKG_HASH" Makefile
+          echo "已更新 lucky 版本到: $New_PKG_VERSION"
+          echo "lucky Hash:$PKG_HASH"
+          cd && cd main
+          echo ":white_check_mark: lucky: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Git Auto Commit
+        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "lucky: update to ${{ steps.update.outputs.version }}"
+          branch: main
