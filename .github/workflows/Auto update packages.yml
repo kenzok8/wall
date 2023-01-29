@@ -1305,3 +1305,56 @@ jobs:
         with:
           commit_message: "lucky: update to ${{ steps.update.outputs.version }}"
           branch: main
+   
+  job_filebrowser:
+    if: ${{ always() }}
+    needs: job_lucky
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: 'main'
+      
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p main && cd main
+          sudo timedatectl set-timezone "$TZ"
+      
+      - name: Check filebrowser
+        id: check
+        run: |
+          cd && cd work/wall/wall/filebrowser
+          Old_PKG_VERSION=$(sed -n '12p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/filebrowser/filebrowser/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          echo "目前版本: $Old_PKG_VERSION"
+          echo "最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+      
+      - name: Update filebrowser
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd work/wall/wall/filebrowser
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          sed -i "12c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          cd && cd main && mkdir -p filebrowser && cd filebrowser
+          wget -P / https://codeload.github.com/filebrowser/filebrowser/tar.gz/v$New_PKG_VERSION
+          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          cd && cd work/wall/wall/filebrowser
+          sed -i "14c PKG_HASH:=$PKG_HASH" Makefile
+          echo "已更新 filebrowser 版本到: $New_PKG_VERSION"
+          echo "filebrowser Hash:$PKG_HASH"
+          cd && cd main
+          echo ":white_check_mark: filebrowser: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Git Auto Commit
+        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "filebrowser: update to ${{ steps.update.outputs.version }}"
+          branch: main          
