@@ -254,12 +254,12 @@ jobs:
         uses: actions/checkout@main
         with:
           ref: 'main'
-      
+
       - name: Initialization environment
         run: |
           cd && mkdir -p main && cd main
           sudo timedatectl set-timezone "$TZ"
-      
+
       - name: Check smartdns
         id: check
         run: |
@@ -270,7 +270,7 @@ jobs:
           echo "最新版本: $New_PKG_VERSION"
           
           if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
-      
+
       - name: Update smartdns
         id: update
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
@@ -288,7 +288,7 @@ jobs:
           cd && cd main
           echo ":white_check_mark: smartdns: update to $New_PKG_VERSION" >> commit_messages.txt
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-      
+
       - name: Git Auto Commit
         uses: stefanzweifel/git-auto-commit-action@v4.16.0
         id: commit
