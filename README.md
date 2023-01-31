@@ -13,6 +13,8 @@
 
 *  集合SSR与pawall插件源码，同步上游releases最新更新！
 
+*  此仓库主要更新插件内核，不包含luci插件！
+
 *  集合了UnblockNeteaseMusic adguardhome alist filebrowser gost lucky mosdns smartdns
 
 *  关于有好的插件请在issues提交
