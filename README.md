@@ -11,7 +11,7 @@
 
 #### wall
 
-*  集合SSR与pawall插件源码，同步上游更新！
+*  集合SSR与pawall插件源码，同步上游releases最新更新！
 
 *  集合了UnblockNeteaseMusic adguardhome alist filebrowser gost lucky mosdns smartdns
 
