@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mosdns
-PKG_VERSION:=5.0.1
+PKG_VERSION:=e8fe435
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=mosdns-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/$(PKG_VERSION)?
-PKG_HASH:=036007a5e38f1853203c038f34c966a8cc3cb05d06624e73c4bf705938989b56
+PKG_HASH:=skip
 
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILE:=LICENSE
@@ -44,7 +44,7 @@ define Package/mosdns
   DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
-define Package/mosdns
+define Package/mosdns-v5
   $(call Package/mosdns/Default)
   DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
@@ -81,10 +81,10 @@ define Package/mosdns/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 endef
 
-define Package/mosdns/install
+define Package/mosdns-v5/install
 	$(call GoPackage/Package/Install/Bin,$(1))
 endef
 
 $(eval $(call GoBinPackage,mosdns))
 $(eval $(call BuildPackage,mosdns))
-$(eval $(call BuildPackage,mosdns))
+$(eval $(call BuildPackage,mosdns-v5))
