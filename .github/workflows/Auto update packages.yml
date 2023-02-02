@@ -212,7 +212,8 @@ jobs:
         run: |
           cd && cd work/wall/wall/mosdns
           Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/IrineSistiana/mosdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          latest_commit="$(curl -s https://github.com/IrineSistiana/mosdns/commits/main | grep -E '"Copy the full SHA"' | awk -F 'value="' '{print $2}' | cut -b 1-7 | sed -n 1p)"
+          New_PKG_VERSION=latest_commit
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
           
