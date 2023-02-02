@@ -9,7 +9,7 @@ PKG_VERSION:=e8fe435
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=mosdns-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/$(PKG_VERSION)?
+PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=4a6ac46ff8e1ddaa262a5033964dba8067e5355458772bc3321bcd0285554272
 
 PKG_LICENSE:=GPL-3.0
