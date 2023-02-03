@@ -8,7 +8,7 @@ PKG_NAME:=mosdns
 PKG_VERSION:=5.0.1
 PKG_RELEASE:=$(AUTORELEASE)
 
-PKG_SOURCE:=mosdns-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=036007a5e38f1853203c038f34c966a8cc3cb05d06624e73c4bf705938989b56
 
