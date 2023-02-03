@@ -280,7 +280,7 @@ jobs:
           sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p smartdns && cd smartdns
           wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/Release$New_PKG_VERSION
-          PKG_MIRROR_HASH=$(sha256sum $New_PKG_VERSION) && PKG_MIRROR_HASH=${PKG_MIRROR_HASH%% *}
+          PKG_MIRROR_HASH=$(sha256sum Release$New_PKG_VERSION) && PKG_MIRROR_HASH=${PKG_MIRROR_HASH%% *}
           cd && cd work/wall/wall/smartdns
           sed -i "13c PKG_MIRROR_HASH:=$PKG_MIRROR_HASH" Makefile
           echo "已更新 smartdns 版本到: $New_PKG_VERSION"
@@ -1220,7 +1220,7 @@ jobs:
         run: |
           cd && cd work/wall/wall/redsocks2
           Old_PKG_VERSION=$(sed -n '12p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'release-' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
           
@@ -1234,12 +1234,12 @@ jobs:
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "12c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p redsocks2 && cd redsocks2
-          wget -P / https://codeload.github.com/semigodking/redsocks/tar.gz/v$New_PKG_VERSION
-          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          wget -P / https://codeload.github.com/semigodking/redsocks/tar.gz/release-$New_PKG_VERSION
+          PKG_MIRROR_HASH=$(sha256sum release-$New_PKG_VERSION) && PKG_MIRROR_HASH=${PKG_MIRROR_HASH%% *}
           cd && cd work/wall/wall/redsocks2
-          sed -i "19c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "19c PKG_MIRROR_HASH:=$PKG_MIRROR_HASH" Makefile
           echo "已更新 redsocks2 版本到: $New_PKG_VERSION"
-          echo "redsocks2 Hash:$PKG_HASH"
+          echo "redsocks2 Hash:$PKG_MIRROR_HASH"
           cd && cd main
           echo ":white_check_mark: redsocks2: update to $New_PKG_VERSION" >> commit_messages.txt
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
