@@ -265,7 +265,7 @@ jobs:
         run: |
           cd && cd work/wall/wall/smartdns
           Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'Release' '{print $2}')
           echo "目前版本: $Old_PKG_VERSION"
           echo "最新版本: $New_PKG_VERSION"
           
@@ -279,7 +279,7 @@ jobs:
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p smartdns && cd smartdns
-          wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/$New_PKG_VERSION
+          wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/Release$New_PKG_VERSION
           PKG_MIRROR_HASH=$(sha256sum $New_PKG_VERSION) && PKG_MIRROR_HASH=${PKG_MIRROR_HASH%% *}
           cd && cd work/wall/wall/smartdns
           sed -i "13c PKG_MIRROR_HASH:=$PKG_MIRROR_HASH" Makefile
