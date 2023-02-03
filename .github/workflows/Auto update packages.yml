@@ -192,62 +192,62 @@ jobs:
           commit_message: "gost: update to ${{ steps.update.outputs.version }}"
           branch: main
 
-  #job_mosdns:
-  #  if: ${{ always() }}
-  #  needs: job_gost
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: Checkout
-  #      uses: actions/checkout@main
-  #      with:
-  #        ref: 'main'
+  job_mosdns:
+    if: ${{ always() }}
+    needs: job_gost
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: 'main'
 
-  #    - name: Initialization environment
-  #      run: |
-  #        cd && mkdir -p main && cd main
-  #        sudo timedatectl set-timezone "$TZ"
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p main && cd main
+          sudo timedatectl set-timezone "$TZ"
 
-  #    - name: Check mosdns
-  #      id: check
-  #      run: |
-  #        cd && cd work/wall/wall/mosdns
-  #        Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
-  #        New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/IrineSistiana/mosdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-  #        echo "目前版本: $Old_PKG_VERSION"
-  #        echo "最新版本: $New_PKG_VERSION"
-  #        
-  #        if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+      - name: Check mosdns
+        id: check
+        run: |
+          cd && cd work/wall/wall/mosdns
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(wget -qO- -t5 -T5 "https://api.github.com/repos/IrineSistiana/mosdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          echo "目前版本: $Old_PKG_VERSION"
+          echo "最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
 
-  #    - name: Update mosdns
-  #      id: update
-  #      if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
-  #      run: |
-  #        cd && cd work/wall/wall/mosdns
-  #        New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-  #        sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
-  #        cd && cd main && mkdir -p mosdns && cd mosdns
-  #        wget -P / https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$New_PKG_VERSION
-  #        PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
-  #        cd && cd work/wall/wall/mosdns
-  #        sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
-  #        echo "已更新 mosdns 版本到: $New_PKG_VERSION"
-  #        echo "mosdns Hash:$PKG_HASH"
-  #        cd && cd main
-  #        echo ":white_check_mark: mosdns: update to $New_PKG_VERSION" >> commit_messages.txt
-  #        echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+      - name: Update mosdns
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd work/wall/wall/mosdns
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+          cd && cd main && mkdir -p mosdns && cd mosdns
+          wget -P / https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$New_PKG_VERSION
+          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          cd && cd work/wall/wall/mosdns
+          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          echo "已更新 mosdns 版本到: $New_PKG_VERSION"
+          echo "mosdns Hash:$PKG_HASH"
+          cd && cd main
+          echo ":white_check_mark: mosdns: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
 
-  #    - name: Git Auto Commit
-  #      uses: stefanzweifel/git-auto-commit-action@v4.16.0
-  #      id: commit
-  #      env:
-  #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #      with:
-  #        commit_message: "mosdns: update to ${{ steps.update.outputs.version }}"
-  #        branch: main
+      - name: Git Auto Commit
+        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "mosdns: update to ${{ steps.update.outputs.version }}"
+          branch: main
 
   job_smartdns:
     if: ${{ always() }}
-    needs: job_gost
+    needs: job_mosdns
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -279,12 +279,12 @@ jobs:
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
           cd && cd main && mkdir -p smartdns && cd smartdns
-          wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/v$New_PKG_VERSION
-          PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          wget -P / https://codeload.github.com/pymumu/smartdns/tar.gz/$New_PKG_VERSION
+          PKG_MIRROR_HASH=$(sha256sum $New_PKG_VERSION) && PKG_MIRROR_HASH=${PKG_MIRROR_HASH%% *}
           cd && cd work/wall/wall/smartdns
-          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+          sed -i "13c PKG_MIRROR_HASH:=$PKG_MIRROR_HASH" Makefile
           echo "已更新 smartdns 版本到: $New_PKG_VERSION"
-          echo "smartdns Hash:$PKG_HASH"
+          echo "smartdns Hash:$PKG_MIRROR_HASH"
           cd && cd main
           echo ":white_check_mark: smartdns: update to $New_PKG_VERSION" >> commit_messages.txt
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
