@@ -365,10 +365,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          committer: smallprogram <smallprogram@foxmail.com>
-          author: smallprogram <smallprogram@foxmail.com>
           signoff: false
-          branch: patches-${{ matrix.pakcages }}-${{ steps.update.outputs.version }}
+          branch: ${{ matrix.pakcages }}-${{ steps.update.outputs.version }}
           base: main
           delete-branch: true
           body: |
