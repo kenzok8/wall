@@ -3,7 +3,7 @@
 # Copyright (C) 2021 ImmortalWrt.org
 
 include $(TOPDIR)/rules.mk
-
+PKG_VERSION:=0.27.0
 PKG_NAME:=UnblockNeteaseMusic
 PKG_BASE_VERSION:=0.27.0
 PKG_RELEASE:=$(AUTORELEASE)
@@ -37,7 +37,7 @@ define Build/Prepare
 endef
 
 define Build/Configure
-	echo -e $(PKG_BASE_VERSION) > $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)/core_ver
+PKG_HASH:=3ce67d28700ccd2286abe045b4b8755e87ec73fc0843de70fd617e5af87581c7
 	echo -e $(PKG_SOURCE_VERSION) > $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)/local_ver
 endef
 
