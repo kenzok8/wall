@@ -47,7 +47,7 @@ jobs:
     - name: Clone packages
       run: |
         cd $GITHUB_WORKSPACE
-        chmod +x .github/diy${{matrix.target}}.sh
+        chmod +x .github/diy/${{matrix.target}}.sh
         git clone -b ${{matrix.target}} https://github.com/kenzok8/wall.git ${{matrix.target}}
         cd ${{matrix.target}}
         git rm -r --cache * >/dev/null 2>&1 &
