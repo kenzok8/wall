@@ -26,6 +26,4 @@
 *  smartdns
 *  UnblockNeteaseMusic
 
-*  关于有好的插件请在issues提交
-
 *  感谢以上github仓库所有者！
