@@ -11,8 +11,11 @@ on:
         description: 'SSH Actions'
         required: false
         default: 'false'
+  push:
+    paths:
+      - '.github/workflows/wall.yml'
   schedule:
-    - cron: "0 */4 * * *"
+    - cron: "0 */8 * * *"
 env:
   TZ: Asia/Shanghai
 
@@ -369,7 +372,7 @@ jobs:
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
 
       - name: Git Auto Commit
-        uses: stefanzweifel/git-auto-commit-action@v4.16.0
+        uses: stefanzweifel/git-auto-commit-action@master
         id: commit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
