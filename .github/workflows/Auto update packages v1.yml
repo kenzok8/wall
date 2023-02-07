@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, alist, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, upx, upx-static, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, sing-box, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite, ssr]
+        pakcages: [adguardhome, alist, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, upx, upx-static, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, sing-box, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite, luci-app-ssr-plus]
         include:
           - pakcages: adguardhome
             folder: adguardhome
@@ -317,8 +317,8 @@ jobs:
             release_download_url: https://github.com/v2fly/domain-list-community/releases/download/
             file_name: /dlc.dat
 
-          - pakcages: ssr
-            folder: ssr
+          - pakcages: luci-app-ssr-plus
+            folder: luci-app-ssr-plus
             version_line: 4
             hash_line: 
             releases_line: 5
