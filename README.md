@@ -13,9 +13,18 @@
 
 *  集合SSR与pawall两个仓库依赖，并拉取releases最新更新！
 
-*  此仓库主要更新插件内核，不包含luci插件！
+*  此仓库主要更新插件内核，包含ssr+passwall三个luci！
 
-*  集合了常用的几个插件 更新（UnblockNeteaseMusic adguardhome alist filebrowser gost lucky mosdns smartdns）
+*  集合了常用的几个插件更新
+
+*  adguardhome
+*  alist 
+*  filebrowser 
+*  gost 
+*  lucky 
+*  mosdns 
+*  smartdns
+*  UnblockNeteaseMusic
 
 *  关于有好的插件请在issues提交
 
