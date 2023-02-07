@@ -2,7 +2,7 @@
 # Copyright (c) 2022-2023 SMALLPROGRAM <https://github.com/smallprogram>
 # Description: Auto update main v2
 #
-name: "Auto update main v2"
+name: "Auto update v2"
 on:
   repository_dispatch:
   workflow_dispatch:
