@@ -16,8 +16,3 @@ bin-release/
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
-/create_acl_for_luci.ok
-/create_acl_for_luci.warn
-/create_acl_for_luci.err
-
-exit 0
