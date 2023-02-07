@@ -13,7 +13,7 @@ on:
         default: 'false'
   push:
     paths:
-      - '.github/workflows/Auto update packages v1'
+      - '.github/workflows/Auto update packages v1.yml'
   schedule:
     - cron: "0 */8 * * *"
 env:
