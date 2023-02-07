@@ -47,7 +47,6 @@ jobs:
     - name: Clone packages
       run: |
         cd $GITHUB_WORKSPACE
-        chmod +x ${{matrix.target}}.sh
         git clone -b ${{matrix.target}} https://github.com/kenzok8/wall.git ${{matrix.target}}
         cd ${{matrix.target}}
         shopt -s extglob
