@@ -1,10 +1,10 @@
-name: Sync packages
+name: repo pawall+ssr
 
 on:
   push:
     paths:
       - '.github/workflows/wall.yml'
-      - 'main.sh'
+      - '.github/diy/**'
   schedule:
     - cron: 0 */12 * * *
   repository_dispatch:
