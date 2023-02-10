@@ -319,11 +319,13 @@ jobs:
 
           - pakcages: luci-app-ssr-plus
             folder: luci-app-ssr-plus
-            version_line: 4
-            hash_line: 
+            version_line: 8
+            hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            release_api_command: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            release_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld 
+            file_name: 
 
           - pakcages: luci-app-passwall
             folder: luci-app-passwall
@@ -360,10 +362,10 @@ jobs:
           cd && cd work/wall/wall/${{ matrix.folder }} 
           Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(${{ matrix.release_api_command }})
-          echo "${{ matrix.pakcages }}ÏÖÔÚ°æ±¾: $Old_PKG_VERSION"
-          echo "${{ matrix.pakcages }}×îĞÂ°æ±¾: $New_PKG_VERSION"
+          echo "${{ matrix.pakcages }}ç°åœ¨ç‰ˆæœ¬: $Old_PKG_VERSION"
+          echo "${{ matrix.pakcages }}æœ€æ–°ç‰ˆæœ¬: $New_PKG_VERSION"
               
-          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "${{ matrix.pakcages }}°æ±¾Îª×îĞÂ°æ±¾$New_PKG_VERSION,ÎŞĞè¸üĞÂ"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "${{ matrix.pakcages }}ç‰ˆæœ¬ä¸ºæœ€æ–°ç‰ˆæœ¬$New_PKG_VERSION,æ— éœ€æ›´æ–°"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
 
       - name: Update ${{ matrix.pakcages }}
         id: update
@@ -378,7 +380,7 @@ jobs:
           if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
           cd && cd work/wall/wall/${{ matrix.folder }} 
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
-          echo "ÒÑ¸üĞÂ${{ matrix.pakcages }}°æ±¾µ½: $New_PKG_VERSION"
+          echo "å·²æ›´æ–°${{ matrix.pakcages }}ç‰ˆæœ¬åˆ°: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
           cd && cd main
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
