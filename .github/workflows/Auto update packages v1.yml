@@ -323,8 +323,7 @@ jobs:
             hash_line: 
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: "$(curl -s https://github.com/fw876/helloworld/commits/main | grep -E '"Copy the full SHA"' | awk -F 'value="' '{print $2}' | cut -b 1-7 | sed -n 1p)"
-            release_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld
+            release_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
 
           - pakcages: luci-app-passwall
             folder: luci-app-passwall
@@ -333,8 +332,7 @@ jobs:
             releases_line: 10
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            releases_head: PKG_RELEASE:=
-            package_command: git clone --depth 1 -b luci https://github.com/xiaorouji/openwrt-passwall passwall && mv -n passwall/luci-app-passwall ./;rm -rf passwall | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            release_download_url: git clone --depth 1 -b luci https://github.com/xiaorouji/openwrt-passwall passwall && mv -n passwall/luci-app-passwall ./;rm -rf passwall | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
 
           - pakcages: luci-app-passwall2
             folder: luci-app-passwall2
@@ -343,8 +341,7 @@ jobs:
             releases_line: 9
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            releases_head: PKG_RELEASE:=
-            package_command: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            release_download_url: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
 
     steps:
       - name: Checkout
