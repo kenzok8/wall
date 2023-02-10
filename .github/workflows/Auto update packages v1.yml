@@ -319,31 +319,35 @@ jobs:
 
           - pakcages: luci-app-ssr-plus
             folder: luci-app-ssr-plus
-            version_line: 8
-            hash_line: 13
+            version_line: 
+            hash_line: 
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
-            release_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld 
+            package_command: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            package_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld 
             file_name: 
 
           - pakcages: luci-app-passwall
             folder: luci-app-passwall
-            version_line: 9
+            version_line: 
             hash_line: 
-            releases_line: 10
+            releases_line: 
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_download_url: git clone --depth 1 -b luci https://github.com/xiaorouji/openwrt-passwall passwall && mv -n passwall/luci-app-passwall ./;rm -rf passwall | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            package_command: git clone --depth 1 -b luci https://github.com/xiaorouji/openwrt-passwall passwall && mv -n passwall/luci-app-passwall ./;rm -rf passwall | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            package_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld 
+            file_name: 
 
           - pakcages: luci-app-passwall2
             folder: luci-app-passwall2
-            version_line: 8
+            version_line: 
             hash_line: 
-            releases_line: 9
+            releases_line: 
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_download_url: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            package_command: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
+            package_download_url: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 
+            file_name: 
 
     steps:
       - name: Checkout
