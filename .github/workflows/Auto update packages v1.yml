@@ -317,38 +317,6 @@ jobs:
             release_download_url: https://github.com/v2fly/domain-list-community/releases/download/
             file_name: /dlc.dat
 
-          - pakcages: luci-app-ssr-plus
-            folder: luci-app-ssr-plus
-            version_line: 4
-            hash_line: 5
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            package_command: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
-            package_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld 
-            file_name: 
-
-          - pakcages: luci-app-passwall
-            folder: luci-app-passwall
-            version_line: 9
-            hash_line: 10
-            releases_line: 
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            package_command: git clone --depth 1 -b luci https://github.com/xiaorouji/openwrt-passwall passwall && mv -n passwall/luci-app-passwall ./;rm -rf passwall | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
-            package_download_url: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld 
-            file_name: 
-
-          - pakcages: luci-app-passwall2
-            folder: luci-app-passwall2
-            version_line: 8
-            hash_line: 9
-            releases_line: 
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            package_command: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
-            package_download_url: git clone --depth 1 https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2 
-            file_name: 
-
     steps:
       - name: Checkout
         uses: actions/checkout@main
