@@ -319,8 +319,8 @@ jobs:
 
           - pakcages: luci-app-ssr-plus
             folder: luci-app-ssr-plus
-            version_line: 
-            hash_line: 
+            version_line: 4
+            hash_line: 5
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
             package_command: git clone --depth 1 https://github.com/fw876/helloworld && mv -n helloworld/luci-app-ssr-plus ./ ; rm -rf helloworld | grep "PKG_VERSION" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F '=' '{print $2}'
@@ -329,8 +329,8 @@ jobs:
 
           - pakcages: luci-app-passwall
             folder: luci-app-passwall
-            version_line: 
-            hash_line: 
+            version_line: 9
+            hash_line: 10
             releases_line: 
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
@@ -340,8 +340,8 @@ jobs:
 
           - pakcages: luci-app-passwall2
             folder: luci-app-passwall2
-            version_line: 
-            hash_line: 
+            version_line: 8
+            hash_line: 9
             releases_line: 
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
