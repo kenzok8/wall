@@ -1,4 +1,4 @@
-![kenzo github stats](https://github-readme-stats.vercel.app/api?username=kenzok8&show_icons=true&theme=merko)
+![kenzo github stats](https://github-readme-stats.vercel.app/api?username=kenzok8&show_icons=true&theme)
 <div align="center">
 <h1 align="center">wall仓库</h1>
 <img src="https://img.shields.io/github/issues/kenzok8/wall?color=green">
