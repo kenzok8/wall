@@ -1,5 +1,5 @@
 #
-# Description: Auto update main v2
+# Description: Auto update package
 #
 name: "Auto update v2"
 on:
@@ -68,9 +68,10 @@ jobs:
           - pakcages: alist
             folder: alist
             version_line: 10
-            web_version_line: 11
+            version_line: 11
             hash_line: 16
             version_head: PKG_VERSION:=
+            web_version_head: PKG_WEB_VERSION:=	${{ PKG_VERSION }}		
             hash_head: PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/alist-org/alist/tar.gz/v
@@ -313,22 +314,11 @@ jobs:
         run: |
           cd && cd work/wall/wall/${{ matrix.folder }} 
           Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
-          Old_PKG_WEB_VERSION=$(sed -n '${{ matrix.PKG_WEB_VERSION_line }}p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(${{ matrix.release_api_command }})
-          New_PKG_WEB_VERSION=${{ matrix.PKG_WEB_VERSION }}
           echo "${{ matrix.pakcages }}现在版本: $Old_PKG_VERSION"
           echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
-          echo "${{ matrix.pakcages }}现在web版本: $Old_PKG_WEB_VERSION"
-          echo "${{ matrix.pakcages }}最新web版本: $New_PKG_WEB_VERSION"
-          
-         if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ] && [ "$Old_PKG_WEB_VERSION" = "$New_PKG_WEB_VERSION" ];then 
-          echo "status=failure" >> $GITHUB_OUTPUT; 
-          echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION, web版本为最新版本$New_PKG_WEB_VERSION, 无需更新"; 
-         else 
-          echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;
-          echo "New_PKG_WEB_VERSION=$New_PKG_WEB_VERSION" >> $GITHUB_OUTPUT;
-          echo "status=success" >> $GITHUB_OUTPUT;
-         fi;
+              
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ];then echo "status=failure" >> $GITHUB_OUTPUT; echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; else echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  echo "status=success" >> $GITHUB_OUTPUT; fi;
 
       - name: Update ${{ matrix.pakcages }}
         id: update
@@ -336,9 +326,7 @@ jobs:
         run: |
           cd && cd work/wall/wall/${{ matrix.folder }}
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          New_PKG_WEB_VERSION=${{ steps.check.outputs.New_PKG_WEB_VERSION }}
           sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile
-          sed -i "${{ matrix.PKG_WEB_VERSION }}c PKG_WEB_VERSION:=${{ steps.check.outputs.New_PKG_WEB_VERSION }}" Makefile
           cd && cd main && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
           wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
           file_name=${{ matrix.file_name }}
@@ -346,17 +334,13 @@ jobs:
           cd && cd work/wall/wall/${{ matrix.folder }} 
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
           echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
-          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_WEB_VERSION"
           echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
           cd && cd main
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
-          echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_WEB_VERSION" >> commit_messages.txt
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-          echo "version=$New_PKG_WEB_VERSION" >> $GITHUB_OUTPUT
+
           cd && cd work/wall/wall
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-          echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_WEB_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-
 
       - name: Git Auto Commit
         uses: stefanzweifel/git-auto-commit-action@master
@@ -366,4 +350,6 @@ jobs:
         with:
           commit_message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
           branch: main
+
+
 
