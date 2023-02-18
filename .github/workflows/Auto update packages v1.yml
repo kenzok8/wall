@@ -320,15 +320,15 @@ jobs:
           echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }}现在web版本: $Old_PKG_WEB_VERSION"
           echo "${{ matrix.pakcages }}最新web版本: $New_PKG_WEB_VERSION"
-
-        if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ] && [ "$Old_PKG_WEB_VERSION" = "$New_PKG_WEB_VERSION" ];then 
+          
+         if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ] && [ "$Old_PKG_WEB_VERSION" = "$New_PKG_WEB_VERSION" ];then 
           echo "status=failure" >> $GITHUB_OUTPUT; 
           echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION, web版本为最新版本$New_PKG_WEB_VERSION, 无需更新"; 
-        else 
+         else 
           echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;
           echo "New_PKG_WEB_VERSION=$New_PKG_WEB_VERSION" >> $GITHUB_OUTPUT;
           echo "status=success" >> $GITHUB_OUTPUT;
-        fi;
+         fi;
 
       - name: Update ${{ matrix.pakcages }}
         id: update
@@ -351,10 +351,8 @@ jobs:
           cd && cd main
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_WEB_VERSION" >> commit_messages.txt
-
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
           echo "version=$New_PKG_WEB_VERSION" >> $GITHUB_OUTPUT
-
           cd && cd work/wall/wall
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_WEB_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
