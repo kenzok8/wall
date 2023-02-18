@@ -71,7 +71,7 @@ jobs:
             version_line: 11
             hash_line: 16
             version_head: PKG_VERSION:=
-            web_version_head: PKG_WEB_VERSION:=	${{ PKG_VERSION }}		
+            web_version_head: PKG_WEB_VERSION:=			
             hash_head: PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/alist-org/alist/tar.gz/v
@@ -350,6 +350,3 @@ jobs:
         with:
           commit_message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
           branch: main
-
-
-
