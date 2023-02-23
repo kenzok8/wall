@@ -71,7 +71,7 @@ jobs:
             hash_line: 16
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/alist-org/alist/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/alist-org/alist/tar.gz/v
             file_name: 
 
@@ -81,7 +81,7 @@ jobs:
             hash_line: 14
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/filebrowser/filebrowser/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/filebrowser/filebrowser/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/filebrowser/filebrowser/tar.gz/v
             file_name: 
 
@@ -91,7 +91,7 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/ginuerzh/gost/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/ginuerzh/gost/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/ginuerzh/gost/tar.gz/v
             file_name: 
 
@@ -101,7 +101,7 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/IrineSistiana/mosdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/IrineSistiana/mosdns/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v
             file_name: 
 
@@ -111,7 +111,7 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/golgote/neturl/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/golgote/neturl/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/golgote/neturl/tar.gz/v
             file_name: 
 
@@ -121,7 +121,7 @@ jobs:
             hash_line: 48
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/gdy666/lucky/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/gdy666/lucky/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/gdy666/lucky/tar.gz/v
             file_name: 
 
@@ -131,7 +131,7 @@ jobs:
             hash_line: 19
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/semigodking/redsocks/tar.gz/v
             file_name:
 
@@ -141,7 +141,7 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/pymumu/smartdns/tar.gz/
             file_name: 
 
@@ -151,7 +151,7 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/upx/upx/tar.gz/v
             file_name:
 
@@ -161,7 +161,7 @@ jobs:
             hash_line: 40
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/upx/upx/tar.gz/v
             file_name: 
 
@@ -171,7 +171,7 @@ jobs:
             hash_line: 15
             version_head: PKG_BASE_VERSION:=
             hash_head: PKG_MIRROR_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/UnblockNeteaseMusic/server/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/UnblockNeteaseMusic/server/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/UnblockNeteaseMusic/server/tar.gz/v
             file_name: 
 
@@ -181,7 +181,7 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2rayA/v2rayA/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/v2rayA/v2rayA/tar.gz/v
             file_name: 			
 
