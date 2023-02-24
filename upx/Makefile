@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=upx
-PKG_VERSION:=3.96
+PKG_VERSION:=4.0.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
