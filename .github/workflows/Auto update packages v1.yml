@@ -147,7 +147,7 @@ jobs:
 
           - pakcages: upx
             folder: upx
-            version_line: 9
+            version_line: 10
             hash_line: 16
             version_head: PKG_VERSION:=
             hash_head: PKG_MIRROR_HASH:=
