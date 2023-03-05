@@ -22,21 +22,19 @@ PKG_BUILD_DEPENDS:=golang/host node/host node-yarn/host
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
-PKG_CONFIG_DEPENDS:=CONFIG_ADGUARDHOME_COMPRESS_GOPROXY
-
 GO_PKG:=github.com/AdguardTeam/AdGuardHome
 GO_PKG_BUILD_PKG:=github.com/AdguardTeam/AdGuardHome
 
 AGH_BUILD_TIME:=$(shell date -d @$(SOURCE_DATE_EPOCH) +%FT%TZ%z)
 AGH_VERSION_PKG:=github.com/AdguardTeam/AdGuardHome/internal/version
 GO_PKG_LDFLAGS_X:=$(AGH_VERSION_PKG).channel=release \
-	$(AGH_VERSION_PKG).version=v$(PKG_VERSION) \
+	$(AGH_VERSION_PKG).version=$(PKG_SOURCE_VERSION) \
 	$(AGH_VERSION_PKG).buildtime=$(AGH_BUILD_TIME) \
 	$(AGH_VERSION_PKG).goarm=$(GO_ARM) \
 	$(AGH_VERSION_PKG).gomips=$(GO_MIPS)
 
 include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
+include ../../lang/golang/golang-package.mk
 
 define Package/adguardhome
 	SECTION:=net
@@ -54,17 +52,6 @@ endef
 define Package/adguardhome/description
 Free and open source, powerful network-wide ads and trackers blocking DNS server.
 endef
-
-define Package/$(PKG_NAME)/config
-config ADGUARDHOME_COMPRESS_GOPROXY
-	bool "Compiling with GOPROXY proxy"
-	default n
-endef
-
-ifeq ($(CONFIG_ADGUARDHOME_COMPRESS_GOPROXY),y)
-export GO111MODULE=on
-export GOPROXY=https://goproxy.bj.bcebos.com
-endif
 
 define Build/Compile
 	( \
