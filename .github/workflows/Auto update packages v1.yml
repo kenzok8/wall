@@ -83,6 +83,7 @@ jobs:
             hash_head: PKG_HASH:=
             release_api_command: curl -s "https://api.github.com/repos/zfl9/chinadns-ng/releases/latest" | grep "tag_name" | head -n 1 | sed 's/\"//g;s/,//g;s/ //g' | awk -F ":" '{print $2}' 
             release_download_url: https://codeload.github.com/zfl9/chinadns-ng/tar.gz/
+            file_name: chinadns-ng
 
           - pakcages: filebrowser
             folder: filebrowser
@@ -152,7 +153,7 @@ jobs:
             hash_head: PKG_MIRROR_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases/latest" | grep "tag_name" | head -n 1 | sed 's/\"//g;s/,//g;s/ //g' | awk -F ":" '{print $2}'
             release_download_url: https://codeload.github.com/pymumu/smartdns/tar.gz/
-            file_name: 
+            file_name: smartdns
 
           - pakcages: upx
             folder: upx
