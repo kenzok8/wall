@@ -140,8 +140,8 @@ jobs:
             hash_line: 19
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/semigodking/redsocks/tar.gz/v
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases/latest" | grep "tag_name" | head -n 1 | sed 's/\"//g;s/,//g;s/ //g' | awk -F ":" '{print $2}'
+            release_download_url: https://codeload.github.com/semigodking/redsocks/tar.gz/
             file_name:
 
           - pakcages: smartdns
@@ -149,7 +149,7 @@ jobs:
             version_line: 8
             hash_line: 13
             version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
+            hash_head: PKG_MIRROR_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/pymumu/smartdns/releases/latest" | grep "tag_name" | head -n 1 | sed 's/\"//g;s/,//g;s/ //g' | awk -F ":" '{print $2}'
             release_download_url: https://codeload.github.com/pymumu/smartdns/tar.gz/
             file_name: 
