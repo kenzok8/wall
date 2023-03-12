@@ -83,7 +83,7 @@ jobs:
             hash_head: PKG_HASH:=
             release_api_command: curl -s "https://api.github.com/repos/zfl9/chinadns-ng/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' 
             release_download_url: https://codeload.github.com/zfl9/chinadns-ng/tar.gz/
-            file_name: $New_PKG_VERSION
+            file_name: 
 
           - pakcages: filebrowser
             folder: filebrowser
@@ -358,7 +358,7 @@ jobs:
           cd && cd main && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
           wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
           file_name=${{ matrix.file_name }}
-          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=$(sha256sum $New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
+          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum $New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
           cd && cd work/wall/wall/${{ matrix.folder }} 
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
           echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
