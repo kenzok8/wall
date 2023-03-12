@@ -369,6 +369,7 @@ jobs:
 
           cd && cd work/wall/wall
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
+          sed -i 's/PKG_HASH:=.*/PKG_HASH:=skip/' chinadns-ng/Makefile
 
       - name: Git Auto Commit
         uses: stefanzweifel/git-auto-commit-action@master
