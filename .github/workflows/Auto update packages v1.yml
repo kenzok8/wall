@@ -82,7 +82,7 @@ jobs:
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
             release_api_command: curl -s "https://api.github.com/repos/zfl9/chinadns-ng/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' 
-            release_download_url: https://codeload.github.com/zfl9/chinadns-ng/tar.gz/v
+            release_download_url: https://codeload.github.com/zfl9/chinadns-ng/tar.gz/ ${print $2}
             file_name: 
 
           - pakcages: filebrowser
