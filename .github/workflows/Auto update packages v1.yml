@@ -359,8 +359,8 @@ jobs:
           wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
           file_name=${{ matrix.file_name }}
           if [ ! -n "${{ matrix.file_name }}" ]; then
-              if [[ $New_PKG_VERSION == v* ]]; then
-                  PKG_HASH=$(sha256sum $New_PKG_VERSION)
+              if [ $New_PKG_VERSION == v* ]; then
+                  PKG_HASH=$(sha256sum /$New_PKG_VERSION)
               else
                   PKG_HASH=$(sha256sum v$New_PKG_VERSION)
               fi
