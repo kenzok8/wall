@@ -81,9 +81,9 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: curl -s "https://api.github.com/repos/zfl9/chinadns-ng/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' 
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/zfl9/chinadns-ng/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
             release_download_url: https://codeload.github.com/zfl9/chinadns-ng/tar.gz/
-            file_name: 
+            file_name:
             
           - pakcages: dockerd
             folder: dockerd
@@ -390,8 +390,6 @@ jobs:
 
           cd && cd work/wall/wall
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-          sed -i '/^PKG_HASH:= *$/s//PKG_HASH:=skip/' chinadns-ng/Makefile
-          sed -i 's/pkg_web_version:=.*/pkg_web_version:=$pkg_version/' alist/Makefile
 
       - name: Git Auto Commit
         uses: stefanzweifel/git-auto-commit-action@master
