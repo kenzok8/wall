@@ -75,7 +75,6 @@ jobs:
             release_download_url: https://codeload.github.com/alist-org/alist/tar.gz/v
             file_name: 
 
-
           - pakcages: alist-web
             folder: alist
             version_line: 11
