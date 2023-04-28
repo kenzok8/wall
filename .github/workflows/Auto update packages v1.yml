@@ -4,12 +4,18 @@
 name: "Auto update v2"
 
 on:
- workflow_dispatch:
   push:
     paths:
       - '.github/workflows/Auto update packages v1.yml'
   schedule:
     - cron: "0 */8 * * *"
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'packages'
+        required: false
+        default: 'false'	    
+    
 env:
   TZ: Asia/Shanghai
 
