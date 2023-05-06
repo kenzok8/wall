@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, alist, alist-web, chinadns-ng, dockerd, filebrowser, gost, mosdns, naiveproxy, lua-neturl, lucky, redsocks2, smartdns, upx, upx-static, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
+        pakcages: [adguardhome, alist, alist-web, chinadns-ng, dockerd, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, upx, upx-static, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
         include:
           - pakcages: adguardhome
             folder: adguardhome
@@ -136,15 +136,15 @@ jobs:
             release_download_url: https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v
             file_name: 
 
-          - pakcages: naiveproxy
-            folder: naiveproxy
-            version_line: 8
-            hash_line: 13
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/klzgrad/naiveproxy/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/klzgrad/naiveproxy/tar.gz/v
-            file_name: 
+#          - pakcages: naiveproxy
+#            folder: naiveproxy
+#            version_line: 8
+#            hash_line: 13
+#            version_head: PKG_VERSION:=
+#            hash_head: PKG_HASH:=
+#            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/klzgrad/naiveproxy/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+#            release_download_url: https://codeload.github.com/klzgrad/naiveproxy/tar.gz/v
+#            file_name: 
 
           - pakcages: lua-neturl
             folder: lua-neturl
