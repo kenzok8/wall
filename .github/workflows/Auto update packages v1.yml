@@ -188,7 +188,7 @@ jobs:
 
           - pakcages: shadowsocks-rust
             folder: shadowsocks-rust
-            version_line: 8
+            version_line: 9
             hash_line: 14
             version_head: PKG_VERSION:=
             hash_head: PKG_MIRROR_HASH:=
