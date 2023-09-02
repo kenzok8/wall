@@ -410,6 +410,7 @@ jobs:
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
 
           cd && cd work/wall/wall
+          find . -type f -name Makefile -exec sed -i 's/PKG_BUILD_FLAGS:=no-mips16/PKG_USE_MIPS16:=0/g' {} +
           echo "branch_exists=$(git ls-remote --heads origin ${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
 
       - name: Git Auto Commit
