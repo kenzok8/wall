@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, alist, alist-web, chinadns-ng, dockerd, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, shadowsocks-rust，upx, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
+        pakcages: [adguardhome, alist, alist-web, chinadns-ng, dockerd, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, shadowsocks-rust, upx, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
         include:
           - pakcages: adguardhome
             folder: adguardhome
