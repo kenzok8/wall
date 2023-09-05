@@ -83,8 +83,8 @@ jobs:
             version_head: PKG_WEB_VERSION:=
             hash_head: \  HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/alist-org/alist-web/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
-            release_download_url: https://codeload.github.com/alist-org/alist-web/tar.gz/
-            file_name: 
+            release_download_url: https://github.com/alist-org/alist-web/releases/download/
+            file_name: /dist.tar.gz 
 
           - pakcages: chinadns-ng
             folder: chinadns-ng
@@ -234,7 +234,17 @@ jobs:
             hash_head: PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/v2rayA/v2rayA/tar.gz/v
-            file_name: 			
+            file_name: 	
+	    
+          - pakcages: v2ray-web
+            folder: v2raya
+            version_line: 8
+            hash_line: 59
+            version_head: PKG_VERSION:=
+            hash_head: \  HASH:=
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
+            release_download_url: https://github.com/v2rayA/v2rayA/releases/download/
+            file_name: /web.tar.gz
 
           - pakcages: brook
             folder: brook
@@ -246,15 +256,15 @@ jobs:
             release_download_url: https://codeload.github.com/txthinking/brook/tar.gz/v
             file_name:
 
-#          - pakcages: hysteria
-#           folder: hysteria
-#            version_line: 8
-#            hash_line: 13
-#            version_head: PKG_VERSION:=
-#            hash_head: PKG_HASH:=
-#            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/apernet/hysteria/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-#            release_download_url: https://codeload.github.com/apernet/hysteria/tar.gz/app/v
-#            file_name:
+          - pakcages: hysteria
+            folder: hysteria
+            version_line: 8
+            hash_line: 13
+            version_head: PKG_VERSION:=
+            hash_head: PKG_HASH:=
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/apernet/hysteria/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/apernet/hysteria/tar.gz/app/v
+            file_name:
 
           - pakcages: ipt2socks
             folder: ipt2socks
