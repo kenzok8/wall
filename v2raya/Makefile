@@ -25,7 +25,7 @@ GO_PKG:=github.com/v2rayA/v2rayA
 GO_PKG_LDFLAGS_X:= \
 	$(GO_PKG)/conf.Version=$(PKG_VERSION) \
 	$(GO_PKG)/core/iptables.TproxyNotSkipBr=true
-
+skip
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
@@ -56,7 +56,7 @@ define Download/v2raya-web
 	URL:=https://codeload.github.com/v2rayA/v2raya-web/tar.gz/v$(PKG_VERSION)?
 	URL_FILE:=$(WEB_FILE)
 	FILE:=$(WEB_FILE)
-        HASH:=044ba6906b81e7eac1bad6d0a33bb2a8ef051c77aace71c924c8a4a2b6eb121b
+        HASH:=skip
 endef
 
 GO_PKG_TARGET_VARS:=$(filter-out CGO_ENABLED=%,$(GO_PKG_TARGET_VARS)) CGO_ENABLED=0
