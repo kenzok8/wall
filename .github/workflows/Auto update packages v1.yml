@@ -239,7 +239,7 @@ jobs:
             version_line: 8
             hash_line: 63
             version_head: PKG_VERSION:=
-            hash_head: \     HASH:=
+            hash_head: \       HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://github.com/v2rayA/v2rayA/releases/download/v
             file_name: /web.tar.gz
