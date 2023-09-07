@@ -65,7 +65,7 @@ define Package/$(PKG_NAME)/config
 
     config SING_BOX_WITH_ECH
       bool "Build with TLS ECH extension support"
-      default n
+      default y
 
     config SING_BOX_WITH_GRPC
       bool "Build with standard gRPC support"
