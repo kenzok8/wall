@@ -238,7 +238,7 @@ jobs:
 
           - pakcages: v2raya-web
             folder: v2raya
-            version_line: 8
+            version_line:
             hash_line: 63
             version_head: PKG_VERSION:=
             hash_head: \     HASH:=
@@ -366,7 +366,6 @@ jobs:
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2fly/geoip/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
             release_download_url: https://github.com/v2fly/geoip/releases/download/
             file_name: /geoip.dat
-
 
           - pakcages: v2ray-geosite
             folder: v2ray-geodata
