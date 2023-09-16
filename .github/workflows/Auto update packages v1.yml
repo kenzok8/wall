@@ -410,7 +410,7 @@ jobs:
             is_continue=false
           fi
           if [ "$is_continue" = "true" ]; then
-            cd && cd work/openwrt-passwall-packages/openwrt-passwall-packages/${{ matrix.folder }} 
+            cd && cd work/wall/wall/${{ matrix.folder }} 
             Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
             New_PKG_VERSION=$(${{ matrix.release_api_command }})
             echo "${{ matrix.pakcages }}目前版本: $Old_PKG_VERSION"
