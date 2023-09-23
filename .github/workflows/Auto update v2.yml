@@ -6,7 +6,7 @@ name: "Auto update v2"
 on:
   push:
     paths:
-      - '.github/workflows/Auto update packages v1.yml'
+      - '.github/workflows/Auto update v2.yml'
   schedule:
     - cron: "0 */8 * * *"
   workflow_dispatch:
