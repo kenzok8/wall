@@ -11,10 +11,6 @@
 
 #### wall
 
-*  SSR与pawall依赖集成，并拉取releases最新更新！
-
-*  此仓库主要更新插件内核，一般也适配vssr bypass！
-
 *  集合了常用的几个插件更新，
 
 *  adguardhome
