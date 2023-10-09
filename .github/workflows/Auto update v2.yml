@@ -217,17 +217,7 @@ jobs:
             hash_head: PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://github.com/upx/upx/releases/download/v$(PKG_VERSION)/$(PKG_SOURCE)
-            file_name:
-
-#          - pakcages: upx-static
-#            folder: upx-static
-#            version_line: 6
-#            hash_line: 40
-#            version_head: PKG_VERSION:=
-#            hash_head: PKG_HASH:=
-#            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/upx/upx/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-#            release_download_url: https://github.com/upx/upx/releases/download/v$(PKG_VERSION)/$(PKG_SOURCE)
-#            file_name: 
+            file_name: 
 
           - pakcages: UnblockNeteaseMusic
             folder: UnblockNeteaseMusic
@@ -389,6 +379,17 @@ jobs:
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/v2fly/domain-list-community/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
             release_download_url: https://github.com/v2fly/domain-list-community/releases/download/
             file_name: /dlc.dat
+
+          - pakcages: v2ray-geosite-ir
+            folder: v2ray-geodata
+            version_line: 33
+            hash_line: 39
+            version_head: GEOSITE_VER:=
+            hash_head: \  HASH:=
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/bootmortis/iran-hosted-domains/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
+            release_download_url: https://github.com/bootmortis/iran-hosted-domains/releases/download/
+            file_name: /iran.dat
+
 
     steps:
       - name: Checkout
