@@ -384,7 +384,7 @@ jobs:
             folder: v2ray-geodata
             version_line: 33
             hash_line: 39
-            version_head: GEOSITE_VER:=
+            version_head: GEOSITE_IRAN_VER:=
             hash_head: \  HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/bootmortis/iran-hosted-domains/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
             release_download_url: https://github.com/bootmortis/iran-hosted-domains/releases/download/
