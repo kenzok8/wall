@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, alist, alist-web, chinadns-ng, ddns-go, dockerd, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, shadowsocks-rust, upx, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
+        pakcages: [adguardhome, adguardhome-frontend, alist, alist-web, chinadns-ng, ddns-go, dockerd, filebrowser, gost, mosdns, lua-neturl, lucky, redsocks2, smartdns, shadowsocks-rust, upx, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
         include:
           - pakcages: adguardhome
             folder: adguardhome
@@ -68,6 +68,16 @@ jobs:
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v
             file_name: 
+
+          - pakcages: adguardhome-frontend
+            folder: adguardhome
+            version_line: 9
+            hash_line: 61
+            version_head: PKG_VERSION:=
+            hash_head: \      HASH:=
+            release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://github.com/AdguardTeam/AdGuardHome/releases/download/v
+            file_name: /adguardhome-frontend
  
           - pakcages: alist
             folder: alist
