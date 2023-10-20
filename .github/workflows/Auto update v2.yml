@@ -77,7 +77,7 @@ jobs:
             hash_head: \      HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v
-            file_name: /adguardhome-frontend
+            file_name: /AdGuardHome_frontend.tar.gz
  
           - pakcages: alist
             folder: alist
