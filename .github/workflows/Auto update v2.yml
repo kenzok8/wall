@@ -18,8 +18,8 @@ on:
 
       is_update_sing-box:
         description: 'is update sing-box'
-        required: false
-        default: 'false'	
+        required: true
+        default: 'true'	
     
 env:
   TZ: Asia/Shanghai
