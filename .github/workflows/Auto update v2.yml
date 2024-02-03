@@ -102,9 +102,9 @@ jobs:
           - pakcages: ddns-go
             folder: ddns-go
             version_line: 11
-            hash_line: 17
+            hash_line: 16
             version_head: PKG_VERSION:=
-            hash_head: PKG_MIRROR_HASH:=
+            hash_head: PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/jeessy2/ddns-go/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/jeessy2/ddns-go/tar.gz/v
             file_name:
@@ -202,7 +202,7 @@ jobs:
           - pakcages: shadowsocks-rust
             folder: shadowsocks-rust
             version_line: 9
-            hash_line: 19
+            hash_line: 14
             version_head: PKG_VERSION:=
             hash_head: \  PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
