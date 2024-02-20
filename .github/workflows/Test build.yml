@@ -1,9 +1,10 @@
 name: Test Build
 
 on:
+ workflow_dispatch:
   push:
     tags:
-      - v.**
+      - v2.**
 
 jobs:
   build:
