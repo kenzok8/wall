@@ -15,11 +15,6 @@ on:
         description: 'packages'
         required: false
         default: 'false'
-
-      is_update_sing-box:
-        description: 'is update sing-box'
-        required: false
-        default: 'true'
     
 env:
   TZ: Asia/Shanghai
