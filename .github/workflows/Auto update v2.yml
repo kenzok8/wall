@@ -292,8 +292,8 @@ jobs:
 
           - pakcages: sing-box
             folder: sing-box
-            version_line: 8
-            hash_line: 13
+            version_line: 9
+            hash_line: 14
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/SagerNet/sing-box/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
