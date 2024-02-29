@@ -176,8 +176,8 @@ jobs:
 
           - pakcages: redsocks2
             folder: redsocks2
-            version_line: 12
-            hash_line: 19
+            version_line: 8
+            hash_line: 15
             version_head: PKG_VERSION:=
             hash_head: PKG_MIRROR_HASH:=
             release_api_command: wget -qO- -t5 -T5 "https://api.github.com/repos/semigodking/redsocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
