@@ -392,9 +392,6 @@ jobs:
         run: |
           is_continue=true
 
-          if [ "${{ github.event.inputs.is_update_sing-box }}" != "true" ] && [ "${{ matrix.pakcages }}" = "sing-box" ]; then
-            is_continue=false
-          fi
           if [ "$is_continue" = "true" ]; then
             cd && cd work/wall/wall/${{ matrix.folder }} 
             Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
