@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, alist, alist-web, chinadns-ng, ddns-go, dockerd, filebrowser, gost, mosdns, lua-neturl, lucky, smartdns, shadowsocks-rust, upx, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
+        pakcages: [adguardhome, alist, alist-web, chinadns-ng, ddns-go, dockerd, filebrowser, gost, golang, mosdns, lua-neturl, lucky, smartdns, shadowsocks-rust, upx, UnblockNeteaseMusic, v2raya, brook, hysteria, ipt2socks, microsocks, trojan, trojan-go, v2ray-core, v2ray-plugin, xray-core, xray-plugin, v2ray-geoip, v2ray-geosite]
         include:
           - pakcages: adguardhome
             folder: adguardhome
@@ -134,6 +134,16 @@ jobs:
             release_download_url: https://codeload.github.com/ginuerzh/gost/tar.gz/v
             file_name: 
 
+          - packages: golang
+            folder: golang-folder
+            version_line: 10
+            hash_line: 23
+            version_head: GO_VERSION_MAJOR_MINOR:=
+            hash_head: PKG_HASH:=
+            release_api_command: curl -s "https://golang.org/dl/" | grep -oP 'go[0-9]+\.[0-9]+\.[0-9]+' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'go' '{print $2}'
+            release_download_url: https://dl.google.com/go/go
+            file_name: 
+              
           - pakcages: mosdns
             folder: mosdns
             version_line: 8
