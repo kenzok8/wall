@@ -177,7 +177,7 @@ jobs:
           - pakcages: smartdns
             folder: smartdns
             version_line: 8
-            hash_line: 14
+            hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_MIRROR_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/pymumu/smartdns/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'Release' '{print $2}'
