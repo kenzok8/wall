@@ -1,12 +1,12 @@
 #
 # Description: Auto update package
 #
-name: "Auto update v2"
+name: "Test v3"
 
 on:
   push:
     paths:
-      - '.github/workflows/Auto update v2.yml'
+      - '.github/workflows/Test.v3.yml'
   schedule:
     - cron: "0 */23 * * *"
   workflow_dispatch:
