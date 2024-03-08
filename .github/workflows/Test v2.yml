@@ -64,7 +64,7 @@ jobs:
             release_download_url: https://codeload.github.com/txthinking/brook/tar.gz/v
             file_name:
 
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 16
@@ -74,7 +74,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
 
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@arm-linux-musleabi@generic+v7a@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 21
@@ -84,7 +84,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@arm-linux-musleabi@generic+v7a@fast+lto
 
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 24
@@ -94,7 +94,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto
             
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@mips-linux-musl@mips32@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 28
@@ -104,7 +104,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@mips-linux-musl@mips32@fast+lto
 
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@mipsel-linux-musl@mips32@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 31
@@ -114,7 +114,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@mipsel-linux-musl@mips32@fast+lto
 
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@i386-linux-musl@i686@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 34
@@ -124,7 +124,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@i386-linux-musl@i686@fast+lto
 
-          - pakcages: chinadns-ng
+          - pakcages: chinadns-ng@x86_64-linux-musl@x86_64@fast+lto
             folder: chinadns-ng
             version_line:
             hash_line: 36
