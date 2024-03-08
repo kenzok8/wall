@@ -155,11 +155,11 @@ jobs:
             cd && cd work/wall/wall/${{ matrix.folder }} 
             Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
             New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}Ŀǰ�汾: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}���°汾: $New_PKG_VERSION"
+            echo "${{ matrix.pakcages }}目前版本: $Old_PKG_VERSION"
+            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
             if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
               echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}�汾Ϊ���°汾$New_PKG_VERSION,�������"; 
+              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
             else 
               echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
               echo "status=success" >> $GITHUB_OUTPUT;
@@ -182,7 +182,7 @@ jobs:
           if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
           cd && cd work/wall/wall/${{ matrix.folder }} 
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
-          echo "�Ѹ���${{ matrix.pakcages }}�汾��: $New_PKG_VERSION"
+          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
           cd && cd main
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
