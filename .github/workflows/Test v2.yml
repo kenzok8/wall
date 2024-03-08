@@ -79,7 +79,7 @@ jobs:
             version_line:
             hash_line: 21
             version_head: PKG_SOURCE:=
-            hash_head: \  PKG_HASH:=
+            hash_head: \    PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@arm-linux-musleabi@generic+v7a@fast+lto
@@ -89,11 +89,11 @@ jobs:
             version_line:
             hash_line: 24
             version_head: PKG_SOURCE:=
-            hash_head: \  PKG_HASH:=
+            hash_head: \    PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto
-            
+
           - pakcages: chinadns-ng@mips-linux-musl@mips32@fast+lto
             folder: chinadns-ng
             version_line:
