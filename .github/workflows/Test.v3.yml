@@ -52,28 +52,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, adguardhome-frontend, chinadns-ng, shadowsocks-rust, v2raya, v2ray-geoip, v2ray-geosite]
+        pakcages: [chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto, chinadns-ng@arm-linux-musleabi@generic+v7a@fast+lto,chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto]
         include:
-          - pakcages: adguardhome
-            folder: adguardhome
-            version_line: 9
-            hash_line: 14
-            version_head: PKG_VERSION:=
-            hash_head: \PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v
-            file_name: 
-
-          - pakcages: adguardhome-frontend
-            folder: adguardhome
-            version_line: 9
-            hash_line: 60
-            version_head: PKG_VERSION:=
-            hash_head: \	HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://github.com/AdguardTeam/AdGuardHome/releases/download/v
-            file_name: AdGuardHome_frontend.tar.gz
-
           - pakcages: chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
             folder: chinadns-ng
             version_line: 8
@@ -175,11 +155,11 @@ jobs:
             cd && cd work/wall/wall/${{ matrix.folder }} 
             Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
             New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}Ä¿Ç°°æ±¾: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}×îĞÂ°æ±¾: $New_PKG_VERSION"
+            echo "${{ matrix.pakcages }}Ä¿Ç°ï¿½æ±¾: $Old_PKG_VERSION"
+            echo "${{ matrix.pakcages }}ï¿½ï¿½ï¿½Â°æ±¾: $New_PKG_VERSION"
             if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
               echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}°æ±¾Îª×îĞÂ°æ±¾$New_PKG_VERSION,ÎŞĞè¸üĞÂ"; 
+              echo "${{ matrix.pakcages }}ï¿½æ±¾Îªï¿½ï¿½ï¿½Â°æ±¾$New_PKG_VERSION,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"; 
             else 
               echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
               echo "status=success" >> $GITHUB_OUTPUT;
@@ -202,7 +182,7 @@ jobs:
           if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
           cd && cd work/wall/wall/${{ matrix.folder }} 
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
-          echo "ÒÑ¸üĞÂ${{ matrix.pakcages }}°æ±¾µ½: $New_PKG_VERSION"
+          echo "ï¿½Ñ¸ï¿½ï¿½ï¿½${{ matrix.pakcages }}ï¿½æ±¾ï¿½ï¿½: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
           cd && cd main
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
