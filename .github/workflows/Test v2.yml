@@ -74,7 +74,7 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
 
-            - pakcages: chinadns-ng
+          - pakcages: chinadns-ng
             folder: chinadns-ng
             version_head: GEOSITE_VER:=
             hash_head: \  HASH:=
@@ -103,7 +103,7 @@ jobs:
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto
-			
+
           - pakcages: chinadns-ng
             folder: chinadns-ng
             version_head: GEOSITE_VER:=
