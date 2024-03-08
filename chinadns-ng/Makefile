@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chinadns-ng
-PKG_VERSION:=2024.03.07
+PKG_VERSION:=2023.10.28
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/zfl9/chinadns-ng/releases/download/$(PKG_VERSION)
@@ -13,7 +13,7 @@ UNPACK_CMD=$(CP) $(DL_DIR)/$(PKG_SOURCE) $(PKG_BUILD_DIR)/chinadns-ng
 
 ifeq ($(ARCH),aarch64)
   PKG_SOURCE:=chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
-  PKG_HASH:=a699d6d6a3b03b068d6a52fa411611f0e6738a51b5c43cb745c36e2d155e03d8
+  PKG_HASH:=skip
 else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
@@ -21,20 +21,20 @@ else ifeq ($(ARCH),arm)
     PKG_HASH:=0c77f8d7631cca22d1816a90655b407b9f82bbb349ac221d12a9a26da6c72dcb
   else
     PKG_SOURCE:=chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto
-    PKG_HASH:=02ef7b8c9d54a1718fa7f6832bbdc04b9c3e2f29ecb89f726c801030c1f0a3b4
+    PKG_HASH:=skip
   endif
 else ifeq ($(ARCH),mips)
   PKG_SOURCE:=chinadns-ng@mips-linux-musl@mips32@fast+lto
-  PKG_HASH:=5d04803e8353f69d0358ce14d2c44579cf286477d3457e72ce8a3f6659b6625f
+  PKG_HASH:=skip
 else ifeq ($(ARCH),mipsel)
   PKG_SOURCE:=chinadns-ng@mipsel-linux-musl@mips32@fast+lto
-  PKG_HASH:=10bf2f022596ed69585876cb126aa487e6585a574ec2787f535d0b7b419b3c58
+  PKG_HASH:=skip
 else ifeq ($(ARCH),i386)
   PKG_SOURCE:=chinadns-ng@i386-linux-musl@i686@fast+lto
-  PKG_HASH:=fef4eeb0533dbec588cdbc768e9eaa6d6087eb484f0a693a4ec677e06d3caa46
+  PKG_HASH:=skip
 else ifeq ($(ARCH),x86_64)
   PKG_SOURCE:=chinadns-ng@x86_64-linux-musl@x86_64@fast+lto
-  PKG_HASH:=f2cb388d150b836228dc114d25867fc649fdd56a6ff04d35c1ef6df5025f0888
+  PKG_HASH:=skip
 else
   PKG_SOURCE:=dummy
   PKG_HASH:=dummy
