@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chinadns-ng
-PKG_SOURCE:=03.07
+PKG_SOURCE:=2024.03.07
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/zfl9/chinadns-ng/releases/download/$(PKG_VERSION)
@@ -18,7 +18,7 @@ else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
     PKG_SOURCE:=chinadns-ng@arm-linux-musleabi@generic+v7a@fast+lto
-    PKG_HASH:=skip
+    PKG_HASH:=0c77f8d7631cca22d1816a90655b407b9f82bbb349ac221d12a9a26da6c72dcb
   else
     PKG_SOURCE:=chinadns-ng@arm-linux-musleabihf@generic+v7a@fast+lto
     PKG_HASH:=skip
