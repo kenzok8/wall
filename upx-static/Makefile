@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=upx-static
-PKG_VERSION:=3.9.6
+PKG_VERSION:=4.2.2
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),x86_64)
@@ -37,7 +37,7 @@ endif
 PKG_FILE:=upx-$(PKG_VERSION).tar.xz
 PKG_URL:=https://github.com/upx/upx/releases/download/v$(PKG_VERSION)/upx-$(PKG_VERSION)-$(PKG_ARCH)_linux.tar.xz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-PKG_HASH:=977857ff7602f701ec6310c984a747308ed7f34bef6e963fcb41bd7fa5c51d22
+PKG_HASH:=42ee0455eea610ef7ee732aa1f657b34a351ebcfa64a24c1e2a7aaec74c1e038
 
 include $(INCLUDE_DIR)/package.mk
 
