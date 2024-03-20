@@ -66,7 +66,7 @@ jobs:
 
           - pakcages: adguardhome-frontend
             folder: adguardhome
-            version_line: 
+            version_line: 9
             hash_line: 60
             version_head: PKG_VERSION:=
             hash_head: \	HASH:=
