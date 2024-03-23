@@ -197,7 +197,7 @@ jobs:
           - pakcages: shadowsocks-rust
             folder: shadowsocks-rust
             version_line: 9
-            hash_line: 14
+            hash_line: 24
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
@@ -211,8 +211,8 @@ jobs:
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/upx/upx/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/upx/upx/tar.gz/v
-            file_name: 
+            release_download_url: https://github.com/upx/upx/releases/download/v
+            file_name: /upx-$New_PKG_VERSION-src.tar.xz
 
           - pakcages: UnblockNeteaseMusic
             folder: UnblockNeteaseMusic
@@ -244,7 +244,6 @@ jobs:
             release_download_url: https://github.com/v2rayA/v2rayA/releases/download/v
             file_name: /web.tar.gz
     
-
           - pakcages: brook
             folder: brook
             version_line: 8
