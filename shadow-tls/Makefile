@@ -20,7 +20,7 @@ else ifeq ($(ARCH),arm)
         PKG_HASH:=e6f918a072557c50fd0ea950af9a156a9b102af72c1d010ff85d08d13006c54f
     else ifeq ($(CONFIG_CPU_TYPE),cortex-a9)
         RELEASE_ARCH:=$(RELEASE_HEAD)-armv7-$(RELEASE_FOOT)eabihf
-        PKG_HASH:=e6f918a072557c50fd0ea950af9a156a9b102af7
+        PKG_HASH:=e6f918a072557c50fd0ea950af9a156a9b102af72c1d010ff85d08d13006c54f
     else
         RELEASE_ARCH:=$(RELEASE_HEAD)-arm-$(RELEASE_FOOT)eabi
         PKG_HASH:=b6743bc60e1727972ece0fd5acf3a931e5be05cedee6f637e7e3d8c5b8d58f16
