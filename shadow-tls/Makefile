@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/package.mk
 
 PKG_NAME:=shadow-tls
-PKG_VERSION:=0.2.25
+PKG_VERSION:=0.2.24
 PKG_RELEASE:=1
 
 PKG_LICENSE_FILES:=LICENSE
