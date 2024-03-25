@@ -28,7 +28,7 @@ else ifeq ($(ARCH),mips)
   PKG_HASH:=18970e6191661c3f2398a18ce8b003758c6a6c0f3c5d164a566fb108ab5bc1da
 else ifeq ($(ARCH),mipsel)
   PKG_SOURCE:=chinadns-ng@mipsel-linux-musl@mips32+soft_float@fast+lto
-  PKG_HASH:=eef2bc033bd87ec00af96bb212f51eb83940ec2f49eaf0e9b3097fb22665dc67
+  PKG_HASH:=26aa029b141a3d25e078c4b92c06c93a87c06b0516e86c13d32a9ee865dd2ca2
 else ifeq ($(ARCH),i386)
   PKG_SOURCE:=chinadns-ng@i386-linux-musl@i686@fast+lto
   PKG_HASH:=4147e3be49f5ef5c0200b6c62cb8036e7944b4f0729ede83faef33c828d6ff91
