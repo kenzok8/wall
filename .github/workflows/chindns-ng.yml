@@ -9,7 +9,7 @@ on:
         required: false
         default: 'false'
   schedule:
-    - cron: "19 0 * * *"
+    - cron: "0 */8 * * *"
 env:
   TZ: Asia/Shanghai
 
