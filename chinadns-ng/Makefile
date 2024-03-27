@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chinadns-ng
-PKG_VERSION:=2024.03.25
+PKG_VERSION:=2024.03.27
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/zfl9/chinadns-ng/releases/download/$(PKG_VERSION)
@@ -28,7 +28,7 @@ else ifeq ($(ARCH),mips)
   PKG_HASH:=18970e6191661c3f2398a18ce8b003758c6a6c0f3c5d164a566fb108ab5bc1da
 else ifeq ($(ARCH),mipsel)
   PKG_SOURCE:=chinadns-ng@mipsel-linux-musl@mips32+soft_float@fast+lto
-  PKG_HASH:=26aa029b141a3d25e078c4b92c06c93a87c06b0516e86c13d32a9ee865dd2ca2
+  PKG_HASH:=9ac1462187b3b06173f908295d45fd0fa3e37eb50171e22198e29dd81710b268
 else ifeq ($(ARCH),i386)
   PKG_SOURCE:=chinadns-ng@i386-linux-musl@i686@fast+lto
   PKG_HASH:=4147e3be49f5ef5c0200b6c62cb8036e7944b4f0729ede83faef33c828d6ff91
