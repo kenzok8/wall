@@ -13,7 +13,7 @@ UNPACK_CMD=$(CP) $(DL_DIR)/$(PKG_SOURCE) $(PKG_BUILD_DIR)/chinadns-ng
 
 ifeq ($(ARCH),aarch64)
   PKG_SOURCE:=chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
-  PKG_HASH:=cd53686626f678fff3122b61aabee6c3bf9dad7e7577a8efc5f432fdeaf8d975
+  PKG_HASH:=5255a5393d0923ca378f1076eefa8719ab301b25398ab0280e026cdc6316b0e4
 else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
