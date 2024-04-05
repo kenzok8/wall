@@ -71,7 +71,7 @@ jobs:
             hash_head: \PKG_HASH:=
             version_line: 
             hash_line: 16
-            release_api_command: curl -sL "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: curl -sL "https://api.github.com/repos/alist-org/alist/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://codeload.github.com/alist-org/alist/tar.gz/v
             file_name: 
 
@@ -81,7 +81,7 @@ jobs:
             hash_head: \  HASH:=
             version_line: 
             hash_line: 26
-            release_api_command: curl -sL "https://api.github.com/repos/alist-org/alist-web/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
+            release_api_command: curl -sL "https://api.github.com/repos/alist-org/alist-web/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/alist-org/alist-web/releases/download/
             file_name: /dist.tar.gz   
 
@@ -108,11 +108,11 @@ jobs:
               Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
             fi
             New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}Ä¿Ç°°æ±¾: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}×îĞÂ°æ±¾: $New_PKG_VERSION"
+            echo "${{ matrix.pakcages }}Ä¿Ç°ï¿½æ±¾: $Old_PKG_VERSION"
+            echo "${{ matrix.pakcages }}ï¿½ï¿½ï¿½Â°æ±¾: $New_PKG_VERSION"
             if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
               echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}°æ±¾Îª×îĞÂ°æ±¾$New_PKG_VERSION,ÎŞĞè¸üĞÂ"; 
+              echo "${{ matrix.pakcages }}ï¿½æ±¾Îªï¿½ï¿½ï¿½Â°æ±¾$New_PKG_VERSION,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"; 
             else 
               echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
               echo "status=success" >> $GITHUB_OUTPUT;
@@ -145,7 +145,7 @@ jobs:
           else
             sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
           fi
-          echo "ÒÑ¸üĞÂ${{ matrix.pakcages }}°æ±¾µ½: $New_PKG_VERSION"
+          echo "ï¿½Ñ¸ï¿½ï¿½ï¿½${{ matrix.pakcages }}ï¿½æ±¾ï¿½ï¿½: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
           cd && cd pack
           echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
