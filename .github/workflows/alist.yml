@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [adguardhome, adguardhome-frontend,alist, alist-web]
+        pakcages: [alist,adguardhome]
         include:
           - pakcages: adguardhome
             folder: adguardhome
