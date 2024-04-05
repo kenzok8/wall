@@ -153,26 +153,6 @@ jobs:
             release_api_command: curl -sL "https://api.github.com/repos/UnblockNeteaseMusic/server/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/UnblockNeteaseMusic/server/tar.gz/v
             file_name: 
-
-          - pakcages: v2raya
-            folder: v2raya
-            version_line: 8
-            hash_line: 13
-            version_head: PKG_VERSION:=
-            hash_head: \PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/v2rayA/v2rayA/tar.gz/v
-            file_name: 	
-
-          - pakcages: v2raya-web
-            folder: v2raya
-            version_line: 8
-            hash_line: 63
-            version_head: PKG_VERSION:=
-            hash_head: \	HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://github.com/v2rayA/v2rayA/releases/download/v
-            file_name: /web.tar.gz
     
           - pakcages: brook
             folder: brook
