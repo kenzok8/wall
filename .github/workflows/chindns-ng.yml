@@ -64,7 +64,7 @@ jobs:
             hash_line: 16
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng@arm-linux-musleabi@generic+v7a@fast+lto
+            file_name: /chinadns-ng@arm-linux-musleabi@generic+v6+soft_float@fast+lto
 
           - pakcages: chinadns-ng_arm-linux-musleabihf
             folder: chinadns-ng
