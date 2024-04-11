@@ -8,6 +8,15 @@ PKG_NAME:=naiveproxy
 PKG_VERSION:=122.0.6261.43-2
 PKG_RELEASE:=1
 
+# intel 80386 & riscv64
+ifeq ($(ARCH_PACKAGES),i386_pentium-mmx)
+  ARCH_PACKAGES:=x86
+else ifeq ($(ARCH_PACKAGES),i386_pentium4)
+  ARCH_PACKAGES:=x86
+else ifeq ($(ARCH_PACKAGES),riscv64_riscv64)
+  ARCH_PACKAGES:=riscv64
+endif
+
 ifeq ($(ARCH_PACKAGES),aarch64_cortex-a53)
   PKG_HASH:=3f7ba5f4660f801e675aac8124bd7da714ff9b5a11c72955086ed4914fdd0600
 else ifeq ($(ARCH_PACKAGES),aarch64_cortex-a72)
@@ -70,7 +79,7 @@ define Package/naiveproxy
   SUBMENU:=Web Servers/Proxies
   TITLE:=Make a fortune quietly
   URL:=https://github.com/klzgrad/naiveproxy
-  DEPENDS:=@!(arc||armeb||mips||mips64||powerpc||TARGET_gemini) +libatomic
+  DEPENDS:=@(aarch64||arm||i386||mipsel||riscv64||x86_64) +libatomic
 endef
 
 define Package/naiveproxy/description
