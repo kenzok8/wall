@@ -29,7 +29,7 @@ else ifeq ($(ARCH),i386)
   PKG_HASH:=76b03582a5d9618ca95e7dcc712433683f0f74cfa9aba50aaeb2ac6316ef8721
 else ifeq ($(ARCH),x86_64)
   PKG_ARCH:=chinadns-ng@x86_64-linux-musl@x86_64@fast+lto
-  PKG_HASH:=af11c02a80f5b7db69832c86a15126adf822d54e8f0aa38bb1d88f75449180bc
+  PKG_HASH:=36792a45c39304eca69e1cd5bb38c985c836e54b8672ab8cefe06a915b05f5c9
 else
   PKG_HASH:=dummy
 endif
