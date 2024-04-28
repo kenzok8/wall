@@ -8,7 +8,7 @@ PKG_RELEASE:=1
 
 ifeq ($(ARCH),aarch64)
   PKG_ARCH:=chinadns-ng@aarch64-linux-musl@generic+v8a@fast+lto
-  PKG_HASH:=dddbfcde000d4178fee2f8cdcfec7f10f8deb1f6673f9046b35d340dd2182ac5
+  PKG_HASH:=61eb8132c640bea1879d239169ed55cef79606f273ee46bbf1fd13872d1c8fca
 else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
