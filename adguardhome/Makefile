@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=adguardhome
-PKG_VERSION:=0.107.48
+PKG_VERSION:=0.107.49
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -57,7 +57,7 @@ define Download/adguardhome-frontend
 	URL:=https://github.com/AdguardTeam/AdGuardHome/releases/download/v$(PKG_VERSION)/
 	URL_FILE:=AdGuardHome_frontend.tar.gz
 	FILE:=$(FRONTEND_FILE)
-        HASH:=48670d085bbdd7a70f4a4cbcba047dd94052190c5471ada5be92c334ed793aa2
+        HASH:=554e71adf83f7050a9affbc9671697cc6515bca760af1493874e9b8ab69c9ec2
 endef
 
 define Build/Prepare
