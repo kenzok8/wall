@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=shadowsocks-rust
-PKG_VERSION:=1.19.3
+PKG_VERSION:=1.19.4
 PKG_RELEASE:=1
 
 PKG_SOURCE_HEADER:=shadowsocks-v$(PKG_VERSION)
@@ -43,7 +43,7 @@ else ifeq ($(ARCH),mips)
   PKG_HASH:=71571f2f14a9c586a62be5da1dd16e70a713580c4527a43766f14fa5d0f05975
 else ifeq ($(ARCH),mipsel)
   PKG_SOURCE:=$(PKG_SOURCE_HEADER).mipsel-$(PKG_SOURCE_BODY).$(PKG_SOURCE_FOOTER)
-  PKG_HASH:=72e7dde0ee1f07854bb79ec885a1fce766570592cc84bbb5dfae59fda6ebf397
+  PKG_HASH:=90d1d80fa269000364ead815b5349224b244da9ba3f4e30883db97aa85deb11b
 # Set the default value to make OpenWrt Package Checker happy
 else
   PKG_SOURCE:=dummy
