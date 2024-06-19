@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=v2rayA
-PKG_VERSION:=2.2.5.2
+PKG_VERSION:=2.2.5.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -60,7 +60,7 @@ define Download/v2raya-web
 	URL:=https://github.com/v2rayA/v2rayA/releases/download/v$(PKG_VERSION)/
 	URL_FILE:=web.tar.gz
 	FILE:=$(WEB_FILE)
-	HASH:=cf15c28c3d31c335a98cd4972041d38af415a875ae18b8676a69d519d5f4797a
+	HASH:=ff6753b6e952347608119d56f4ad34ccfcd3d191df84a5b1b52735f0c137848c
 endef
 
 define Build/Prepare
