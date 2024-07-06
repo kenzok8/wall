@@ -58,7 +58,7 @@ jobs:
           - pakcages: adguardhome-frontend
             folder: adguardhome
             version_line: 9
-            hash_line: 60
+            hash_line: 61
             version_head: PKG_VERSION:=
             hash_head: \        HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
