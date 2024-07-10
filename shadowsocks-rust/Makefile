@@ -43,7 +43,7 @@ else ifeq ($(ARCH),mips)
   PKG_HASH:=c57fa6c72664efc6de3706478e558d74a8d1033351eb74a03d7b5e715426beb0
 else ifeq ($(ARCH),mipsel)
   PKG_SOURCE:=$(PKG_SOURCE_HEADER).mipsel-$(PKG_SOURCE_BODY).$(PKG_SOURCE_FOOTER)
-  PKG_HASH:=8e101612fcc9db88336343a480d5e410ae0f89192c6847439d8131cccfc31943
+  PKG_HASH:=f2cf24376cda21eecfc381279ba96ac1bd91581a355e3d2b78359621bca55f0f
 # Set the default value to make OpenWrt Package Checker happy
 else
   PKG_SOURCE:=dummy
