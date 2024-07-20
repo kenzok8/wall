@@ -49,7 +49,7 @@ jobs:
           - pakcages: chinadns-ng_aarch64
             folder: chinadns-ng
             version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
+            hash_head: \    PKG_HASH:=
             version_line: 
             hash_line: 12
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
@@ -59,7 +59,7 @@ jobs:
           - pakcages: chinadns-ng_aarch64
             folder: chinadns-ng
             version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
+            hash_head: \    PKG_HASH:=
             version_line: 
             hash_line: 15
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
