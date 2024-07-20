@@ -3,13 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chinadns-ng
-PKG_VERSION:=2024.07.16
+PKG_VERSION:=2024.07.20
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),aarch64)
   ifeq ($(BOARD),rockchip)
     PKG_ARCH:=chinadns-ng+wolfssl@aarch64-linux-musl@generic+v8a@fast+lto
-  PKG_HASH:=f0c173d2241317004ac33cf116ff15f449a8dede67f7e38e6f21efa722d70219
+  PKG_HASH:=605cdcf46b2b82a4c4989747e5e16b577a5b42574d0432d1ff0bc689daa62124
   else
     PKG_ARCH:=chinadns-ng+wolfssl_noasm@aarch64-linux-musl@generic+v8a@fast+lto
   PKG_HASH:=a3706e49aa71c113710a4d28fca5f1201708feb82002c26a3c8bf6a333cbaea7
