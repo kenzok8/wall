@@ -12,7 +12,7 @@ ifeq ($(ARCH),aarch64)
     PKG_HASH:=605cdcf46b2b82a4c4989747e5e16b577a5b42574d0432d1ff0bc689daa62124
   else
     PKG_ARCH:=chinadns-ng+wolfssl_noasm@aarch64-linux-musl@generic+v8a@fast+lto
-    PKG_HASH:=dfa60cf7cdac7bd4ccfc9d3ed4bc99e8a8ed4e8542e42dacfb2daa2ca9e0fc85
+    PKG_HASH:=9414c8f237b8a919d411fb38a7d2aa83c7617ae441695af54ea84feb22b0639c
   endif
 else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
