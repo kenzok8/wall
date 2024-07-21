@@ -9,7 +9,7 @@ PKG_RELEASE:=1
 ifeq ($(ARCH),aarch64)
   ifeq ($(BOARD),rockchip)
     PKG_ARCH:=chinadns-ng+wolfssl@aarch64-linux-musl@generic+v8a@fast+lto
-    PKG_HASH:=605cdcf46b2b82a4c4989747e5e16b577a5b42574d0432d1ff0bc689daa62124
+    PKG_HASH:=1a65fadc48956231eba439efd9ae914f6e5eb0f5d257a34cd8c6b0d5734ade57
   else
     PKG_ARCH:=chinadns-ng+wolfssl_noasm@aarch64-linux-musl@generic+v8a@fast+lto
     PKG_HASH:=9414c8f237b8a919d411fb38a7d2aa83c7617ae441695af54ea84feb22b0639c
