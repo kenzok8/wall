@@ -27,7 +27,7 @@ else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
     PKG_SOURCE:=$(PKG_SOURCE_HEADER).arm-$(PKG_SOURCE_BODY)eabi.$(PKG_SOURCE_FOOTER)
-    PKG_HASH:=e17cdf96cdc0976c97ba8e09feda48d11de287e1fcc2aef59a8b69fddea68a60
+    PKG_HASH:=05406ece4eaac711d3f131db58f1136878fdec3790628fc4b7f0e2ec9907e008
   else
     PKG_SOURCE:=$(PKG_SOURCE_HEADER).arm-$(PKG_SOURCE_BODY)eabihf.$(PKG_SOURCE_FOOTER)
     PKG_HASH:=7ca8b7b76f32a949f4651a375bb7aedbe63c580e674b18cf77d261f937f364de
