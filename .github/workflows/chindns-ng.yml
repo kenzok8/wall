@@ -106,12 +106,22 @@ jobs:
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng+wolfssl@mipsel-linux-musl@mips32+soft_float@fast+lto
 
-          - pakcages: chinadns-ng_i386
+          - pakcages: chinadns-ng_mips64
             folder: chinadns-ng
             version_head: PKG_VERSION:=
             hash_head: \  PKG_HASH:=
             version_line: 
             hash_line: 34
+            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
+            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
+            file_name: /chinadns-ng+wolfssl@mips64-linux-musl@mips64+soft_float@fast+lto
+
+          - pakcages: chinadns-ng_i386
+            folder: chinadns-ng
+            version_head: PKG_VERSION:=
+            hash_head: \  PKG_HASH:=
+            version_line: 
+            hash_line: 37
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng+wolfssl@i386-linux-musl@i686@fast+lto
@@ -121,7 +131,7 @@ jobs:
             version_head: PKG_VERSION:=
             hash_head: \  PKG_HASH:=
             version_line: 
-            hash_line: 37
+            hash_line: 40
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
             release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
             file_name: /chinadns-ng+wolfssl@x86_64-linux-musl@x86_64@fast+lto
