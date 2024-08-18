@@ -26,7 +26,7 @@ else ifeq ($(ARCH_PACKAGES),aarch64_cortex-a72)
 else ifeq ($(ARCH_PACKAGES),aarch64_generic)
   PKG_HASH:=d934eaf8db3cc0e289f7a21604c165a4bbe656b69b2be547dbf022b9f0abb528
 else ifeq ($(ARCH_PACKAGES),arm_arm1176jzf-s_vfp)
-  PKG_HASH:=05e2a634b552cae71692a22367d26f8f303ee95d06a7707882fb1d6f3daa6a0a
+  PKG_HASH:=1611f9d1259089364ccc541a080b223d3de5d198a85dabee65bd03762b535bcf
 else ifeq ($(ARCH_PACKAGES),arm_arm926ej-s)
   PKG_HASH:=526cb5f271ed82c1251548d26d5265449853105ea91af6731be9df93810d7dcc
 else ifeq ($(ARCH_PACKAGES),arm_cortex-a15_neon-vfpv4)
