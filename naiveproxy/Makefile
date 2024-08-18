@@ -48,7 +48,7 @@ else ifeq ($(ARCH_PACKAGES),arm_cortex-a9_neon)
 else ifeq ($(ARCH_PACKAGES),arm_cortex-a9_vfpv3-d16)
   PKG_HASH:=601aec7c6b7382a4f778c73c81be5ac243695789636bab42d5171cbdb46728d7
 else ifeq ($(ARCH_PACKAGES),arm_mpcore)
-  PKG_HASH:=a132692b8ac678ff6d40cb22767da80ef83b7f6c4f81242d8f033721d33ecc83
+  PKG_HASH:=c077e2387a9a49883e23e4fffe35622932ea8068fae4a45f491cd6490183e5f6
 else ifeq ($(ARCH_PACKAGES),arm_xscale)
   PKG_HASH:=e4e256500a8c312ebff4b6ada2e1a3a997bed61b0c6c399d2ee6493d9b0a1fba
 else ifeq ($(ARCH_PACKAGES),mipsel_24kc)
