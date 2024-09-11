@@ -173,7 +173,7 @@ jobs:
           cd && cd $GITHUB_WORKSPACE
           echo "branch_exists=$(git ls-remote --heads origin patches-${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
 
-      - name: Create Pull Request
+- name: Create Pull Request
         id: cpr
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && !cancelled()
         uses: peter-evans/create-pull-request@main
@@ -192,3 +192,10 @@ jobs:
           labels: |
             automated-pr
           draft: false
+
+      - name: Auto-merge pull request
+        if: steps.cpr.outputs.pull-request-number
+        run: |
+          gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
