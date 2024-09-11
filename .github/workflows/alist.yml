@@ -192,3 +192,30 @@ jobs:
           labels: |
             automated-pr
           draft: false
+
+      - name: Merge Pull Request
+        if: steps.cpr.outputs.pull-request-number
+        run: |
+          pr_number="${{ steps.cpr.outputs.pull-request-number }}"
+          max_attempts=3
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt to merge PR #$pr_number"
+            if gh pr merge --auto --merge --update "$pr_number"; then
+              echo "Pull request #$pr_number merged successfully."
+              break
+            else
+              echo "Merge attempt $attempt failed."
+              if [ $attempt -eq $max_attempts ]; then
+                echo "Failed to merge pull request after $max_attempts attempts."
+                echo "Manual intervention may be required."
+                exit 1
+              fi
+              echo "Waiting before next attempt..."
+              sleep 30
+            fi
+            attempt=$((attempt + 1))
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
