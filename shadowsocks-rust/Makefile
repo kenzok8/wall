@@ -21,7 +21,7 @@ endif
 
 ifeq ($(ARCH),aarch64)
   PKG_SOURCE:=$(PKG_SOURCE_HEADER).aarch64-$(PKG_SOURCE_BODY).$(PKG_SOURCE_FOOTER)
-  PKG_HASH:=e6c4a001b1e4200d9c43ce50acfe57cbbb4a89b69bf16feb42085e0fa49c4344
+  PKG_HASH:=936da15a164e3c8bab05de502b65b68923129ef53256a1012bd50a646a248ab4
 else ifeq ($(ARCH),arm)
   # Referred to golang/golang-values.mk
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
