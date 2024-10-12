@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=alist
 PKG_VERSION:=3.38.0
-PKG_WEB_VERSION:=3.37.1
+PKG_WEB_VERSION:=3.38.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -23,7 +23,7 @@ define Download/$(PKG_NAME)-web
   FILE:=$(PKG_NAME)-web-$(PKG_WEB_VERSION).tar.gz
   URL_FILE:=dist.tar.gz
   URL:=https://github.com/alist-org/alist-web/releases/download/$(PKG_WEB_VERSION)/
-  HASH:=0ca1fceb5291c59d5b5dcc0f3e871eac96485d39abce8495f1eb510cc12bccf6
+  HASH:=8c76d6863bc77e0b5da1cbae10b6cec2b3332fcb4e41f055747f4cc5ab04c06a
 endef
 
 PKG_BUILD_DEPENDS:=golang/host
