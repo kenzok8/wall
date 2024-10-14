@@ -18,7 +18,7 @@ else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
     PKG_ARCH:=chinadns-ng+wolfssl@arm-linux-musleabi@generic+v6+soft_float@fast+lto
-    PKG_HASH:=2e81cef3dae7e736fa98d6a4b2d654c5bbc2e13a0f128f22db564f4cac9a5283
+    PKG_HASH:=4881e4dc20a1a4b21bc0cc3c378da8d8004274929e5900d5246aece230eea4f8
   else
     PKG_ARCH:=chinadns-ng+wolfssl@arm-linux-musleabihf@generic+v7a@fast+lto
     PKG_HASH:=5a47e56ef6fac90d22eabc766ffb817cb15fa3875b03ea2a4cd8a684b25b401a
