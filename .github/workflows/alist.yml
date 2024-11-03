@@ -173,9 +173,21 @@ jobs:
           cd && cd $GITHUB_WORKSPACE
           echo "branch_exists=$(git ls-remote --heads origin patches-${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
 
+      - name: Check for conflicts
+        id: check_conflicts
+        run: |
+          git fetch origin main
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "No conflicts with main branch"
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+          else
+            echo "Has conflicts with main branch"
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Pull Request
         id: cpr
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && !cancelled()
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && steps.check_conflicts.outputs.has_conflicts != 'true'
         uses: peter-evans/create-pull-request@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
