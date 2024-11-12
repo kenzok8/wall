@@ -1,4 +1,4 @@
-name: "alist & adguardhome"
+name: "adguardhome"
 on:
   repository_dispatch:
   workflow_dispatch:
