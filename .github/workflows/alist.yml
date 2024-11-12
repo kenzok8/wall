@@ -1,4 +1,4 @@
-name: "alist"
+name: "alist & adguardhome"
 on:
   repository_dispatch:
   workflow_dispatch:
@@ -39,81 +39,156 @@ jobs:
     if: ${{ always() }}
     needs: job_init
     runs-on: ubuntu-latest
+    name: update-${{ matrix.pakcages }} 
+    strategy:
+      fail-fast: false
+      matrix:
+        pakcages: [alist,adguardhome,v2raya]
+        include:
+          - pakcages: adguardhome
+            folder: adguardhome
+            version_line: 9
+            hash_line: 14
+            version_head: PKG_VERSION:=
+            hash_head: \PKG_HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v
+            file_name: 
+
+          - pakcages: adguardhome-frontend
+            folder: adguardhome
+            version_line: 9
+            hash_line: 61
+            version_head: PKG_VERSION:=
+            hash_head: \        HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://github.com/AdguardTeam/AdGuardHome/releases/download/v
+            file_name: /AdGuardHome_frontend.tar.gz
+
+          - pakcages: alist
+            folder: alist
+            version_line: 10
+            hash_line: 16
+            version_head: PKG_VERSION:=
+            hash_head: \PKG_HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/alist-org/alist/tar.gz/v
+            file_name: 
+
+          - pakcages: alist-web
+            folder: alist
+            version_line: 11
+            hash_line: 26
+            version_head: PKG_WEB_VERSION:=
+            hash_head: \  HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/alist-org/alist-web/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
+            release_download_url: https://github.com/alist-org/alist-web/releases/download/
+            file_name: /dist.tar.gz
+
+          - pakcages: v2raya
+            folder: v2raya
+            version_line: 8
+            hash_line: 13
+            version_head: PKG_VERSION:=
+            hash_head: \PKG_HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/v2rayA/v2rayA/tar.gz/v
+            file_name: 	
+
+          - pakcages: v2raya-web
+            folder: v2raya
+            version_line: 8
+            hash_line: 63
+            version_head: PKG_VERSION:=
+            hash_head: \	HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://github.com/v2rayA/v2rayA/releases/download/v
+            file_name: /web.tar.gz
+
     steps:
       - name: Checkout
         uses: actions/checkout@main
 
       - name: Initialization environment
         run: |
-          mkdir -p /tmp/pack
+          cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check and Update Alist Components
-        id: update
+      - name: Check ${{ matrix.pakcages }}
+        id: check
         run: |
-          NEED_UPDATE=false
-          UPDATE_MSG=""
-          
-          # Check and update alist
-          OLD_ALIST_VERSION=$(sed -n '10p' alist/Makefile | awk -F '=' '{print $2}' | tr -d ' ')
-          NEW_ALIST_VERSION=$(curl -sL "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-          
-          echo "Current alist version: $OLD_ALIST_VERSION"
-          echo "Latest alist version: $NEW_ALIST_VERSION"
-          
-          if [ "$OLD_ALIST_VERSION" != "$NEW_ALIST_VERSION" ]; then
-            sed -i "10c PKG_VERSION:=$NEW_ALIST_VERSION" alist/Makefile
-            wget -q -P /tmp/pack https://codeload.github.com/alist-org/alist/tar.gz/v${NEW_ALIST_VERSION}
-            ALIST_HASH=$(sha256sum /tmp/pack/v${NEW_ALIST_VERSION} | cut -d' ' -f1)
-            sed -i "16c PKG_HASH:=$ALIST_HASH" alist/Makefile
-            NEED_UPDATE=true
-            UPDATE_MSG="${UPDATE_MSG}- alist: ${OLD_ALIST_VERSION} -> ${NEW_ALIST_VERSION}"
-          fi
-          
-          # Check and update alist-web
-          OLD_WEB_VERSION=$(sed -n '11p' alist/Makefile | awk -F '=' '{print $2}' | tr -d ' ')
-          NEW_WEB_VERSION=$(curl -sL "https://api.github.com/repos/alist-org/alist-web/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-          
-          echo "Current alist-web version: $OLD_WEB_VERSION"
-          echo "Latest alist-web version: $NEW_WEB_VERSION"
-          
-          if [ "$OLD_WEB_VERSION" != "$NEW_WEB_VERSION" ]; then
-            sed -i "11c PKG_WEB_VERSION:=$NEW_WEB_VERSION" alist/Makefile
-            wget -q -P /tmp/pack https://github.com/alist-org/alist-web/releases/download/${NEW_WEB_VERSION}/dist.tar.gz
-            WEB_HASH=$(sha256sum /tmp/pack/dist.tar.gz | cut -d' ' -f1)
-            sed -i "26c   HASH:=$WEB_HASH" alist/Makefile
-            NEED_UPDATE=true
-            if [ -n "$UPDATE_MSG" ]; then
-              UPDATE_MSG="${UPDATE_MSG}\n"
+          is_continue=true
+
+          if [ "$is_continue" = "true" ]; then
+            cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+            if [ ! -n "${{ matrix.version_line }}" ] ; then
+              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
+            else
+              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
             fi
-            UPDATE_MSG="${UPDATE_MSG}- alist-web: ${OLD_WEB_VERSION} -> ${NEW_WEB_VERSION}"
-          fi
-          
-          if [ "$NEED_UPDATE" = "true" ]; then
-            echo "need_update=true" >> $GITHUB_OUTPUT
-            echo "update_msg<<EOF" >> $GITHUB_OUTPUT
-            echo -e "$UPDATE_MSG" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            New_PKG_VERSION=$(${{ matrix.release_api_command }})
+            echo "${{ matrix.pakcages }}目前版本: $Old_PKG_VERSION"
+            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
+            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
+              echo "status=failure" >> $GITHUB_OUTPUT; 
+              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
+            else 
+              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
+              echo "status=success" >> $GITHUB_OUTPUT;
+            fi
           else
-            echo "need_update=false" >> $GITHUB_OUTPUT
+            echo "status=failure" >> $GITHUB_OUTPUT;
           fi
 
+      - name: Update ${{ matrix.pakcages }}
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          if [ ! -n "${{ matrix.version_line }}" ] ; then
+            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          else
+            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          fi
+          cd && cd pack && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
+          wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
+          file_name=${{ matrix.file_name }}
+
+          is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
+
+          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
+          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
+          if [ ! -n "${{ matrix.hash_line }}" ] ; then
+            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
+          else
+            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
+          fi
+          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
+          echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
+          cd && cd pack
+          echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+
+          cd && cd $GITHUB_WORKSPACE
+          echo "branch_exists=$(git ls-remote --heads origin patches-${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
-        if: steps.update.outputs.need_update == 'true'
+        id: cpr
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && !cancelled()
         uses: peter-evans/create-pull-request@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "alist: update components"
+          commit-message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
           committer: action <actions@github.com>
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           signoff: false
-          branch: alist-updates
+          branch: patches-${{ matrix.pakcages }}-${{ steps.update.outputs.version }}
           base: main
           delete-branch: true
           body: |
-            Update alist components:
-            ${{ steps.update.outputs.update_msg }}
-          title: "alist: update components"
+            ${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}
+          title: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
           labels: |
             automated-pr
           draft: false
