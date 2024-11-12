@@ -45,44 +45,58 @@ jobs:
 
       - name: Initialization environment
         run: |
-          cd && mkdir -p pack && cd pack
+          mkdir -p /tmp/pack
           sudo timedatectl set-timezone "$TZ"
 
       - name: Check and Update Alist Components
         id: update
         run: |
-          cd $GITHUB_WORKSPACE/alist
           NEED_UPDATE=false
           UPDATE_MSG=""
           
           # Check and update alist
-          OLD_ALIST_VERSION=$(sed -n '10p' Makefile | awk -F '=' '{print $2}')
+          OLD_ALIST_VERSION=$(sed -n '10p' alist/Makefile | awk -F '=' '{print $2}' | tr -d ' ')
           NEW_ALIST_VERSION=$(curl -sL "https://api.github.com/repos/alist-org/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           
+          echo "Current alist version: $OLD_ALIST_VERSION"
+          echo "Latest alist version: $NEW_ALIST_VERSION"
+          
           if [ "$OLD_ALIST_VERSION" != "$NEW_ALIST_VERSION" ]; then
-            sed -i "10c PKG_VERSION:=$NEW_ALIST_VERSION" Makefile
-            wget -q -P /tmp https://codeload.github.com/alist-org/alist/tar.gz/v$NEW_ALIST_VERSION
-            ALIST_HASH=$(sha256sum /tmp/v$NEW_ALIST_VERSION | cut -d' ' -f1)
-            sed -i "16c PKG_HASH:=$ALIST_HASH" Makefile
+            sed -i "10c PKG_VERSION:=$NEW_ALIST_VERSION" alist/Makefile
+            wget -q -P /tmp/pack https://codeload.github.com/alist-org/alist/tar.gz/v${NEW_ALIST_VERSION}
+            ALIST_HASH=$(sha256sum /tmp/pack/v${NEW_ALIST_VERSION} | cut -d' ' -f1)
+            sed -i "16c PKG_HASH:=$ALIST_HASH" alist/Makefile
             NEED_UPDATE=true
-            UPDATE_MSG="$UPDATE_MSG\n- alist: $OLD_ALIST_VERSION -> $NEW_ALIST_VERSION"
+            UPDATE_MSG="${UPDATE_MSG}- alist: ${OLD_ALIST_VERSION} -> ${NEW_ALIST_VERSION}"
           fi
           
           # Check and update alist-web
-          OLD_WEB_VERSION=$(sed -n '11p' Makefile | awk -F '=' '{print $2}')
+          OLD_WEB_VERSION=$(sed -n '11p' alist/Makefile | awk -F '=' '{print $2}' | tr -d ' ')
           NEW_WEB_VERSION=$(curl -sL "https://api.github.com/repos/alist-org/alist-web/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
           
+          echo "Current alist-web version: $OLD_WEB_VERSION"
+          echo "Latest alist-web version: $NEW_WEB_VERSION"
+          
           if [ "$OLD_WEB_VERSION" != "$NEW_WEB_VERSION" ]; then
-            sed -i "11c PKG_WEB_VERSION:=$NEW_WEB_VERSION" Makefile
-            wget -q -P /tmp https://github.com/alist-org/alist-web/releases/download/$NEW_WEB_VERSION/dist.tar.gz
-            WEB_HASH=$(sha256sum /tmp/dist.tar.gz | cut -d' ' -f1)
-            sed -i "26c   HASH:=$WEB_HASH" Makefile
+            sed -i "11c PKG_WEB_VERSION:=$NEW_WEB_VERSION" alist/Makefile
+            wget -q -P /tmp/pack https://github.com/alist-org/alist-web/releases/download/${NEW_WEB_VERSION}/dist.tar.gz
+            WEB_HASH=$(sha256sum /tmp/pack/dist.tar.gz | cut -d' ' -f1)
+            sed -i "26c   HASH:=$WEB_HASH" alist/Makefile
             NEED_UPDATE=true
-            UPDATE_MSG="$UPDATE_MSG\n- alist-web: $OLD_WEB_VERSION -> $NEW_WEB_VERSION"
+            if [ -n "$UPDATE_MSG" ]; then
+              UPDATE_MSG="${UPDATE_MSG}\n"
+            fi
+            UPDATE_MSG="${UPDATE_MSG}- alist-web: ${OLD_WEB_VERSION} -> ${NEW_WEB_VERSION}"
           fi
           
-          echo "need_update=$NEED_UPDATE" >> $GITHUB_OUTPUT
-          echo "update_msg=$UPDATE_MSG" >> $GITHUB_OUTPUT
+          if [ "$NEED_UPDATE" = "true" ]; then
+            echo "need_update=true" >> $GITHUB_OUTPUT
+            echo "update_msg<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$UPDATE_MSG" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "need_update=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create Pull Request
         if: steps.update.outputs.need_update == 'true'
@@ -97,7 +111,8 @@ jobs:
           base: main
           delete-branch: true
           body: |
-            Update alist components:${{ steps.update.outputs.update_msg }}
+            Update alist components:
+            ${{ steps.update.outputs.update_msg }}
           title: "alist: update components"
           labels: |
             automated-pr
