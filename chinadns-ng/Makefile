@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chinadns-ng
-PKG_VERSION:=2024.10.14
+PKG_VERSION:=2024.11.17
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),aarch64)
@@ -12,7 +12,7 @@ ifeq ($(ARCH),aarch64)
     PKG_HASH:=cc998570801317b94578b94430edcb344e652cab2d57c02be1bc6390bc6b9b24
   else
     PKG_ARCH:=chinadns-ng+wolfssl_noasm@aarch64-linux-musl@generic+v8a@fast+lto
-    PKG_HASH:=914e8b66805b1804f6688dfcda3b67c7c45e5fc5e05afff4837450f8b67a8372
+    PKG_HASH:=b2e53d1fdc5d65b5f2a1dc26428bf15b86d84f51748ff1970d58bf301f69d2c0
   endif
 else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
