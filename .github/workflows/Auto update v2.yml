@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [dns2tcp,ddns-go,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,v2ray-geoview]
+        pakcages: [dns2tcp,ddns-go,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
         include:
           - pakcages: dns2tcp
             folder: dns2tcp
@@ -334,13 +334,13 @@ jobs:
             release_download_url: https://github.com/bootmortis/iran-hosted-domains/releases/download/
             file_name: /iran.dat
 
-          - pakcages: v2ray-geoview
+          - pakcages: geoview
             folder: v2ray-geoview
             version_line: 4
             hash_line: 9
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/snowie2000/geoview/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: curl -sL "https://api.github.com/repos/snowie2000/geoview/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
             release_download_url: https://codeload.github.com/snowie2000/geoview/tar.gz/
             file_name:
 
