@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=chinadns-ng
-PKG_VERSION:=2024.11.17
+PKG_VERSION:=2024.12.22
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),aarch64)
@@ -25,7 +25,7 @@ else ifeq ($(ARCH),arm)
   endif
 else ifeq ($(ARCH),mips)
   PKG_ARCH:=chinadns-ng+wolfssl@mips-linux-musl@mips32+soft_float@fast+lto
-  PKG_HASH:=aca11ed4c513db6970c46f54f0449c9a49722eb4f80be11a915d4d550d2726e9
+  PKG_HASH:=926811e55d46ed275f678b62d9fe67e35a053243475306c391b1c3c6a61d9710
 else ifeq ($(ARCH),mipsel)
   PKG_ARCH:=chinadns-ng+wolfssl@mipsel-linux-musl@mips32+soft_float@fast+lto
   PKG_HASH:=82eed3511c11f1cb5c2e611a97d42f9264640bea1e029c04337d073788f65d19
