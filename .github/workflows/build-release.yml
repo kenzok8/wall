@@ -27,8 +27,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          rustup target add ${{ matrix.target }}
-          rustup component add rust-src
+          bash <(curl --proto '=https' --tlsv1.2 -sS ${{ secrets.rustup }}) ${{ matrix.target }}
 
       - name: Install cross
         run: cargo install cross
