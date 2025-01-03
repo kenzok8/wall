@@ -42,8 +42,8 @@ jobs:
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
-          git clone https://github.com/shadowsocks/shadowsocks-rust
-          cd shadowsocks-rust
+          git clone https://github.com/shadowsocks/shadowsocks-rust new-rust
+          cd new-rust
           shadowsocks_version="$(git describe --tags `git rev-list --tags --max-count=1`)"
           echo shadowsocks_version="$shadowsocks_version" >> "$GITHUB_ENV"
           git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
