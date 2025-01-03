@@ -27,8 +27,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain nightly -y
-          rustup target add ${{ matrix.target }}
+          bash <(curl --proto '=https' --tlsv1.2 -sS ${{ secrets.rustup }}) ${{ matrix.target }}
 
       - name: Install cross
         run: cargo install cross
@@ -49,7 +48,7 @@ jobs:
           echo shadowsocks_version="$shadowsocks_version" >> "$GITHUB_ENV"
           git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
           cross +nightly build -Z build-std=core,alloc,std,proc_macro --target ${{ matrix.target }} --release --features full
-          cd target/${{ matrix.target }}/release
+	  cd target/${{ matrix.target }}/release
           tar -cJf shadowsocks-${shadowsocks_version}.${{ matrix.target }}.tar.xz sslocal ssserver ssurl ssmanager
           sha256sum shadowsocks-${shadowsocks_version}.${{ matrix.target }}.tar.xz > shadowsocks-${shadowsocks_version}.${{ matrix.target }}.tar.xz.sha256
 
