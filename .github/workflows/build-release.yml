@@ -25,9 +25,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        run: |
-          bash <(curl --proto '=https' --tlsv1.2 -sS ${{ secrets.rustup }}) ${{ matrix.target }}
+      - name: Install Rust Nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly # Use nightly!
+          target: ${{ matrix.target }}
+          components: rust-src # Important for building std
 
       - name: Install cross
         run: cargo install cross
