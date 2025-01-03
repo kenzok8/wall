@@ -47,7 +47,7 @@ jobs:
           shadowsocks_version="$(git describe --tags `git rev-list --tags --max-count=1`)"
           echo shadowsocks_version="$shadowsocks_version" >> "$GITHUB_ENV"
           git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
-          cross build --target ${{ matrix.target }} --release --features full
+          cross build -Z build-std=core,alloc,std,proc_macro --target ${{ matrix.target }} --release --features full
           binary_path=$(find target/${{ matrix.target }}/release/ -maxdepth 1 -type f -executable)
           cd target/${{ matrix.target }}/release
           tar -cJf shadowsocks-${shadowsocks_version}.${{ matrix.target }}.tar.xz sslocal ssserver ssurl ssmanager
