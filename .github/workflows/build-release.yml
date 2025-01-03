@@ -1,0 +1,71 @@
+name: Build Releases
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: build
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-cross:
+    runs-on: ubuntu-latest
+    env:
+      RUST_BACKTRACE: full
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          bash <(curl --proto '=https' --tlsv1.2 -sS ${{ secrets.rustup }}) ${{ matrix.target }}
+
+      - name: Install cross
+        run: cargo install cross
+
+      - name: Install upx
+        run: |
+          wget https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz
+          tar Jxf upx-4.2.4-amd64_linux.tar.xz
+          sudo \cp -a upx-4.2.4-amd64_linux/upx /usr/bin/upx
+          rm -rf upx-4.2.4-amd64_linux*
+
+      - name: Build ${{ matrix.target }}
+        timeout-minutes: 120
+        run: |
+          git clone https://github.com/shadowsocks/shadowsocks-rust
+          cd shadowsocks-rust
+          shadowsocks_version="$(git describe --tags `git rev-list --tags --max-count=1`)"
+          echo shadowsocks_version="$shadowsocks_version" >> "$GITHUB_ENV"
+          git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
+          cd build
+          ./build-release -t ${{ matrix.target }} -f full -u
+          cd release
+          sha256sum shadowsocks-$shadowsocks_version.${{ matrix.target }}.tar.xz > shadowsocks-$shadowsocks_version.${{ matrix.target }}.tar.xz.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadowsocks-${{ env.shadowsocks_version }}.${{ matrix.target }}
+          path: shadowsocks-rust/build/release/shadowsocks-${{ env.shadowsocks_version }}.${{ matrix.target }}.tar.xz
+
+      - name: Create release
+        continue-on-error: true
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ env.shadowsocks_version }}
+          allowUpdates: true
+          replacesArtifacts: true
+          commit: main
+          tag: ${{ env.shadowsocks_version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: shadowsocks-rust/build/release/shadowsocks-${{ env.shadowsocks_version }}.${{ matrix.target }}.tar.xz,shadowsocks-rust/build/release/shadowsocks-${{ env.shadowsocks_version }}.${{ matrix.target }}.tar.xz.sha256
