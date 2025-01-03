@@ -28,7 +28,7 @@ jobs:
       - name: Install Rust
         run: |
           rustup target add ${{ matrix.target }}
-	  rustup component add rust-src
+          rustup component add rust-src
 
       - name: Install cross
         run: cargo install cross
