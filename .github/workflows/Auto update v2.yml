@@ -38,7 +38,7 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           retain_days: 1
-          keep_minimum_runs: 1
+          keep_minimum_runs: 0
         
       - name: SSH connection to Actions
         uses: mxschmitt/action-tmate@master
