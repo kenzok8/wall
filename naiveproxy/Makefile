@@ -20,7 +20,7 @@ else ifeq ($(ARCH_PREBUILT),riscv64_riscv64)
 endif
 
 ifeq ($(ARCH_PACKAGES),aarch64_cortex-a53)
-  PKG_HASH:=070ea4fec533a8ce32f55b6daf8c0431a9b532aba0a0a065583005c6baea77bc
+  PKG_HASH:=0e616a8dade5207435e0f7a2d5c39e86850079d2c992a3877d1483b1367db97e
 else ifeq ($(ARCH_PACKAGES),aarch64_cortex-a72)
   PKG_HASH:=c98c1867f58d24757d2fab09ee28bf921d9805f0d836bb11d25c4acf8306abec
 else ifeq ($(ARCH_PACKAGES),aarch64_generic)
