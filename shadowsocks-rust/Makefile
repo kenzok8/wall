@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=shadowsocks-rust
-PKG_VERSION:=1.23.0
+PKG_VERSION:=1.23.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_HEADER:=shadowsocks-v$(PKG_VERSION)
@@ -27,7 +27,7 @@ else ifeq ($(ARCH),arm)
   ARM_CPU_FEATURES:=$(word 2,$(subst +,$(space),$(call qstrip,$(CONFIG_CPU_TYPE))))
   ifeq ($(ARM_CPU_FEATURES),)
     PKG_SOURCE:=$(PKG_SOURCE_HEADER).arm-$(PKG_SOURCE_BODY)eabi.$(PKG_SOURCE_FOOTER)
-    PKG_HASH:=8a907526b493464e55037f3b32aabab6b135f383eced91ab627ed587b5148e0b
+    PKG_HASH:=9b24a1b6ed431d0ec7e751ea277a8cdb0c1b691c2944c2a0e1fbdf93ab068009
   else
     PKG_SOURCE:=$(PKG_SOURCE_HEADER).arm-$(PKG_SOURCE_BODY)eabihf.$(PKG_SOURCE_FOOTER)
     PKG_HASH:=cdcd50dd3f010fc2fa6b7dd9fb9a7143fff333a378dbd5db3708109a2412f773
