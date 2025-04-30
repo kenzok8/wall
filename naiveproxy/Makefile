@@ -60,7 +60,7 @@ else ifeq ($(ARCH_PACKAGES),riscv64)
 else ifeq ($(ARCH_PACKAGES),x86)
   PKG_HASH:=7e90b9c94751c17c674a5da0a7cfd7ab28bc6657e5a698e3f7e60ec6d3ae2858
 else ifeq ($(ARCH_PACKAGES),x86_64)
-  PKG_HASH:=8fabab9496f947f90d2a4b72379069d53c132cdb14a092898c628ed0e7879d4a
+  PKG_HASH:=bfb9d0b7f7f48e7ab6cbcf8389e2b239c68ad608331bd03b0ab68ddf0ebff019
 else
   PKG_HASH:=dummy
 endif
