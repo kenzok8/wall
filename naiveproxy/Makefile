@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=naiveproxy
-PKG_VERSION:=136.0.7103.44-1
+PKG_VERSION:=136.0.7103.44-2
 PKG_RELEASE:=1
 
 # intel 80386 & riscv64 & cortex-a76
@@ -54,7 +54,7 @@ else ifeq ($(ARCH_PACKAGES),arm_xscale)
 else ifeq ($(ARCH_PACKAGES),mipsel_24kc)
   PKG_HASH:=f01eb9a10300ac6f7d5cd9759a9a47980a9c9c8c5868e25b705c63e711706032
 else ifeq ($(ARCH_PACKAGES),mipsel_mips32)
-  PKG_HASH:=cf4c5f8eafba8420dbdc624b228f48f4cc9089c1cec14bb7178e44709896a798
+  PKG_HASH:=4e5b5fa559cd153ba60fa66ec5aa3271bfbb7985d23db7f4200b1a4b90977564
 else ifeq ($(ARCH_PACKAGES),riscv64)
   PKG_HASH:=0b755b2613e2a66b3ca5d6db20b9207a60cd0ac45fd166df6aa6a2d13acc24cb
 else ifeq ($(ARCH_PACKAGES),x86)
