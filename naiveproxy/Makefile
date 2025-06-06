@@ -52,7 +52,7 @@ else ifeq ($(ARCH_PACKAGES),arm_mpcore)
 else ifeq ($(ARCH_PACKAGES),arm_xscale)
   PKG_HASH:=f2d12e524f0efe69435babdffeee9b49a9d68549326ad4c9374c2dd39acb0998
 else ifeq ($(ARCH_PACKAGES),mipsel_24kc)
-  PKG_HASH:=985844a518da495279d3b5d3eb46b3e17fccb0795bfdf909aef934a07e5834df
+  PKG_HASH:=277405ce386c56172e8e0ca2d98beec5bf5034f77a1224de201119abc5cd92b5
 else ifeq ($(ARCH_PACKAGES),mipsel_mips32)
   PKG_HASH:=4e31ac05f877cc36cf9296377bb4edbfc0b91657c39e5c9dfe36ea63500cf5a0
 else ifeq ($(ARCH_PACKAGES),riscv64)
