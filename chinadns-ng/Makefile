@@ -28,7 +28,7 @@ else ifeq ($(ARCH),mips)
   PKG_HASH:=b610821a8f61b0ed3c8c7e82e10d401348a9de17f900988589024a37c4099c8e
 else ifeq ($(ARCH),mipsel)
   PKG_ARCH:=chinadns-ng+wolfssl@mipsel-linux-musl@mips32+soft_float@fast+lto
-  PKG_HASH:=294917a5009a315cf5ad04cdda8f66714c60c928e2186a6846323e04aa4a798f
+  PKG_HASH:=760544a88724e3b1b9eac79c9400231e81aa8786f8f00a979229e175811ffe6d
 else ifeq ($(ARCH),mips64)
   PKG_ARCH:=chinadns-ng+wolfssl@mips64-linux-musl@mips64+soft_float@fast+lto
   PKG_HASH:=2d0fce18a7ef1d74fdc12738767e66998a52c2b30d8790da760933853fe8726e
