@@ -1,6 +1,9 @@
-# SPDX-License-Identifier: GPL-3.0-only
+@@ -1,149 +1,143 @@
+
 #
-# Copyright (C) 2022-2023 ImmortalWrt.org
+# This is free software, licensed under the GNU General Public License v3.
+# See /LICENSE for more information.
+#
 
 include $(TOPDIR)/rules.mk
 
@@ -142,3 +145,4 @@ endef
 
 $(eval $(call GoBinPackage,sing-box))
 $(eval $(call BuildPackage,sing-box))
+
