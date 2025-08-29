@@ -24,6 +24,7 @@ define Download/$(PKG_NAME)-web
   URL_FILE:=dist.tar.gz
   URL:=https://github.com/alist-org/alist-web/releases/download/$(PKG_WEB_VERSION)/
   HASH:=a5e415b72b7ad89c0db7a3c47a96b460d7343ddd72f2801a09c9a1dbcb234412
+endef
 
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
