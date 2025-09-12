@@ -35,154 +35,111 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  job_auto_update_packages:
+  # 串行执行所有shadow-tls架构，避免同时修改同一个Makefile
+  job_auto_update_shadow_tls:
     if: ${{ always() }}
     needs: job_init
     runs-on: ubuntu-latest
-    name: update-${{ matrix.pakcages }} 
-    strategy:
-      fail-fast: false
-      matrix:
-        pakcages: [shadow-tls]
-        include:
-          - pakcages: shadow-tls-aarch64
-            folder: shadow-tls
-            version_head: PKG_VERSION:=
-            hash_head: \    PKG_HASH:=
-            version_line: 
-            hash_line: 14
-            release_api_command: curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/ihciah/shadow-tls/releases/download/v
-            file_name: /shadow-tls-aarch64-unknown-linux-musl
-
-          - pakcages: shadow-tls-armv7-musleabihf
-            folder: shadow-tls
-            version_head: PKG_VERSION:=
-            hash_head: \        PKG_HASH:=
-            version_line: 
-            hash_line: 18
-            release_api_command: curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/ihciah/shadow-tls/releases/download/v
-            file_name: /shadow-tls-armv7-unknown-linux-musleabihf
-
-          - pakcages: shadow-tls-armv7-musleabihf
-            folder: shadow-tls
-            version_head: PKG_VERSION:=
-            hash_head: \        PKG_HASH:=
-            version_line: 
-            hash_line: 21
-            release_api_command: curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/ihciah/shadow-tls/releases/download/v
-            file_name: /shadow-tls-armv7-unknown-linux-musleabihf
-
-          - pakcages: shadow-tls-arm-musleabi
-            folder: shadow-tls
-            version_head: PKG_VERSION:=
-            hash_head: \        PKG_HASH:=
-            version_line: 
-            hash_line: 24
-            release_api_command: curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/ihciah/shadow-tls/releases/download/v
-            file_name: /shadow-tls-arm-unknown-linux-musleabi
-
-          - pakcages: shadow-tls-x86_64
-            folder: shadow-tls
-            version_head: PKG_VERSION:=
-            hash_head: \    PKG_HASH:=
-            version_line: 
-            hash_line: 28
-            release_api_command: curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/ihciah/shadow-tls/releases/download/v
-            file_name: /shadow-tls-x86_64-unknown-linux-musl    
-
+    name: update-shadow-tls-all-arch
     steps:
       - name: Checkout
         uses: actions/checkout@main
-
 
       - name: Initialization environment
         run: |
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check ${{ matrix.pakcages }}
-        id: check
+      - name: Check version and update all architectures
         run: |
-          is_continue=true
-
-          if [ "$is_continue" = "true" ]; then
-            cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-            if [ ! -n "${{ matrix.version_line }}" ] ; then
-              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
-            else
-              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
-            fi
-            New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}目前版本: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
-            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
-              echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
-            else 
-              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
-              echo "status=success" >> $GITHUB_OUTPUT;
-            fi
+          cd $GITHUB_WORKSPACE/shadow-tls
+          
+          # 检查版本
+          Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//')
+          
+          echo "shadow-tls当前版本: $Old_PKG_VERSION"
+          echo "shadow-tls最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "检测到新版本，开始更新所有架构..."
+            
+            # 更新版本号
+            sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            echo "SHADOW_TLS_UPDATED=true" >> $GITHUB_ENV
+            echo "SHADOW_TLS_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
+            
+            # 创建下载目录
+            cd ~/pack && mkdir -p shadow-tls && cd shadow-tls
+            
+            # 定义所有架构和对应的哈希行及文件名
+            declare -A arch_files=(
+              [14]="shadow-tls-aarch64-unknown-linux-musl"
+              [18]="shadow-tls-armv7-unknown-linux-musleabihf"
+              [21]="shadow-tls-armv7-unknown-linux-musleabihf"
+              [24]="shadow-tls-arm-unknown-linux-musleabi"
+              [28]="shadow-tls-x86_64-unknown-linux-musl"
+            )
+            
+            # 定义缩进格式
+            declare -A indent_spaces=(
+              [14]=4  # aarch64: 4空格
+              [18]=8  # armv7-musleabihf: 8空格
+              [21]=8  # armv7-musleabihf (重复): 8空格
+              [24]=8  # arm-musleabi: 8空格
+              [28]=4  # x86_64: 4空格
+            )
+            
+            # 下载所有文件并计算哈希
+            for hash_line in "${!arch_files[@]}"; do
+              file_name="${arch_files[$hash_line]}"
+              spaces="${indent_spaces[$hash_line]}"
+              echo "处理架构文件: $file_name (行号: $hash_line, 缩进: ${spaces}空格)"
+              
+              # 下载文件
+              wget -q "https://github.com/ihciah/shadow-tls/releases/download/v$New_PKG_VERSION/$file_name"
+              
+              if [ -f "$file_name" ]; then
+                # 计算哈希
+                PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
+                echo "$file_name 哈希值: $PKG_HASH"
+                
+                # 根据缩进格式更新哈希
+                cd $GITHUB_WORKSPACE/shadow-tls
+                if [ "$spaces" = "4" ]; then
+                  sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
+                elif [ "$spaces" = "8" ]; then
+                  sed -i "${hash_line}c\        PKG_HASH:=$PKG_HASH" Makefile
+                fi
+                
+                cd ~/pack/shadow-tls
+              else
+                echo "警告: 无法下载文件 $file_name"
+              fi
+            done
+            
+            echo "所有架构文件哈希更新完成"
           else
-            echo "status=failure" >> $GITHUB_OUTPUT;
+            echo "shadow-tls版本为最新版本,无需更新"
+            echo "SHADOW_TLS_UPDATED=false" >> $GITHUB_ENV
           fi
 
-      - name: Update ${{ matrix.pakcages }}
-        id: update
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+      - name: Commit and Push shadow-tls Changes
+        if: env.SHADOW_TLS_UPDATED == 'true'
         run: |
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          if [ ! -n "${{ matrix.version_line }}" ] ; then
-            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          cd $GITHUB_WORKSPACE
+          
+          # 配置git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # 检查是否有变更
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "检测到shadow-tls文件变更，准备提交..."
+            git add shadow-tls/Makefile
+            git commit -m "shadow-tls: update to $SHADOW_TLS_VERSION"
+            git push origin main
+            echo "✅ 已成功提交并推送 shadow-tls 更改到版本 $SHADOW_TLS_VERSION"
           else
-            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+            echo "没有检测到shadow-tls文件变更"
           fi
-          cd && cd pack && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
-          wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
-          file_name=${{ matrix.file_name }}
-
-          is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-
-          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
-          if [ ! -n "${{ matrix.hash_line }}" ] ; then
-            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          else
-            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          fi
-          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
-          echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
-          cd && cd pack
-          echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
-          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-
-          cd && cd $GITHUB_WORKSPACE
-          echo "branch_exists=$(git ls-remote --heads origin patches-${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-
-      - name: Create Pull Request
-        id: cpr
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && !cancelled()
-        uses: peter-evans/create-pull-request@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          committer: action <actions@github.com>
-          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          branch: patches-${{ matrix.pakcages }}-${{ steps.update.outputs.version }}
-          base: main
-          delete-branch: true
-          body: |
-            ${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}
-          title: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          labels: |
-            automated-pr
-          draft: false
-
-
-
