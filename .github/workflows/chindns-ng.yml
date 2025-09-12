@@ -1,4 +1,3 @@
-
 name: "chinadns-ng"
 on:
   repository_dispatch:
@@ -36,106 +35,12 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  job_auto_update_packages:
+  # 由于所有chinadns-ng架构都使用同一个版本号和同一个Makefile，需要串行执行避免冲突
+  job_auto_update_chinadns_ng:
     if: ${{ always() }}
     needs: job_init
     runs-on: ubuntu-latest
-    name: update-${{ matrix.pakcages }} 
-    strategy:
-      fail-fast: false
-      matrix:
-        pakcages: [chinadns-ng]
-        include:
-          - pakcages: chinadns-ng_aarch64
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \    PKG_HASH:=
-            version_line: 
-            hash_line: 12
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@aarch64-linux-musl@generic+v8a@fast+lto
-
-          - pakcages: chinadns-ng_aarch64_noasm
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \    PKG_HASH:=
-            version_line: 
-            hash_line: 15
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl_noasm@aarch64-linux-musl@generic+v8a@fast+lto
-
-          - pakcages: chinadns-ng_arm-linux-musleabi
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \    PKG_HASH:=
-            version_line: 
-            hash_line: 21
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@arm-linux-musleabi@generic+v6+soft_float@fast+lto
-
-          - pakcages: chinadns-ng_arm-linux-musleabihf
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \    PKG_HASH:=
-            version_line: 
-            hash_line: 24
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@arm-linux-musleabihf@generic+v7a@fast+lto
-
-          - pakcages: chinadns-ng_mips
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line: 
-            hash_line: 28
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@mips-linux-musl@mips32+soft_float@fast+lto
-
-          - pakcages: chinadns-ng_mipsel
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line: 
-            hash_line: 31
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@mipsel-linux-musl@mips32+soft_float@fast+lto
-
-          - pakcages: chinadns-ng_mips64
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line: 
-            hash_line: 34
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@mips64-linux-musl@mips64+soft_float@fast+lto
-
-          - pakcages: chinadns-ng_i386
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line: 
-            hash_line: 37
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@i386-linux-musl@i686@fast+lto
-
-          - pakcages: chinadns-ng_x86_64
-            folder: chinadns-ng
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line: 
-            hash_line: 40
-            release_api_command: curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/zfl9/chinadns-ng/releases/download/
-            file_name: /chinadns-ng+wolfssl@x86_64-linux-musl@x86_64@fast+lto
-
+    name: update-chinadns-ng-all-arch
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -145,81 +50,92 @@ jobs:
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check ${{ matrix.pakcages }}
-        id: check
+      - name: Check version and update all architectures
         run: |
-          is_continue=true
-
-          if [ "$is_continue" = "true" ]; then
-            cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-            if [ ! -n "${{ matrix.version_line }}" ] ; then
-              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
-            else
-              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
-            fi
-            New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}目前版本: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
-            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
-              echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
-            else 
-              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
-              echo "status=success" >> $GITHUB_OUTPUT;
-            fi
+          cd $GITHUB_WORKSPACE/chinadns-ng
+          
+          # 检查版本
+          Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//')
+          
+          echo "chinadns-ng当前版本: $Old_PKG_VERSION"
+          echo "chinadns-ng最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "检测到新版本，开始更新所有架构..."
+            
+            # 更新版本号
+            sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            echo "CHINADNS_UPDATED=true" >> $GITHUB_ENV
+            echo "CHINADNS_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
+            
+            # 创建下载目录
+            cd ~/pack && mkdir -p chinadns-ng && cd chinadns-ng
+            
+            # 定义所有架构和对应的哈希行
+            declare -A arch_files=(
+              [12]="chinadns-ng+wolfssl@aarch64-linux-musl@generic+v8a@fast+lto"
+              [15]="chinadns-ng+wolfssl_noasm@aarch64-linux-musl@generic+v8a@fast+lto"
+              [21]="chinadns-ng+wolfssl@arm-linux-musleabi@generic+v6+soft_float@fast+lto"
+              [24]="chinadns-ng+wolfssl@arm-linux-musleabihf@generic+v7a@fast+lto"
+              [28]="chinadns-ng+wolfssl@mips-linux-musl@mips32+soft_float@fast+lto"
+              [31]="chinadns-ng+wolfssl@mipsel-linux-musl@mips32+soft_float@fast+lto"
+              [34]="chinadns-ng+wolfssl@mips64-linux-musl@mips64+soft_float@fast+lto"
+              [37]="chinadns-ng+wolfssl@i386-linux-musl@i686@fast+lto"
+              [40]="chinadns-ng+wolfssl@x86_64-linux-musl@x86_64@fast+lto"
+            )
+            
+            # 下载所有文件并计算哈希
+            for hash_line in "${!arch_files[@]}"; do
+              file_name="${arch_files[$hash_line]}"
+              echo "处理架构文件: $file_name (行号: $hash_line)"
+              
+              # 下载文件
+              wget -q "https://github.com/zfl9/chinadns-ng/releases/download/$New_PKG_VERSION/$file_name"
+              
+              if [ -f "$file_name" ]; then
+                # 计算哈希
+                PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
+                echo "$file_name 哈希值: $PKG_HASH"
+                
+                # 更新对应行的哈希
+                cd $GITHUB_WORKSPACE/chinadns-ng
+                if [ "$hash_line" -eq 12 ] || [ "$hash_line" -eq 15 ] || [ "$hash_line" -eq 21 ] || [ "$hash_line" -eq 24 ]; then
+                  # aarch64 和 arm 架构使用4个空格缩进
+                  sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
+                else
+                  # 其他架构使用2个空格缩进
+                  sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
+                fi
+                
+                cd ~/pack/chinadns-ng
+              else
+                echo "警告: 无法下载文件 $file_name"
+              fi
+            done
+            
+            echo "所有架构文件哈希更新完成"
           else
-            echo "status=failure" >> $GITHUB_OUTPUT;
+            echo "chinadns-ng版本为最新版本,无需更新"
+            echo "CHINADNS_UPDATED=false" >> $GITHUB_ENV
           fi
 
-      - name: Update ${{ matrix.pakcages }}
-        id: update
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+      - name: Commit and Push chinadns-ng Changes
+        if: env.CHINADNS_UPDATED == 'true'
         run: |
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          if [ ! -n "${{ matrix.version_line }}" ] ; then
-            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          cd $GITHUB_WORKSPACE
+          
+          # 配置git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # 检查是否有变更
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "检测到chinadns-ng文件变更，准备提交..."
+            git add chinadns-ng/Makefile
+            git commit -m "chinadns-ng: update to $CHINADNS_VERSION"
+            git push origin main
+            echo "✅ 已成功提交并推送 chinadns-ng 更改到版本 $CHINADNS_VERSION"
           else
-            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+            echo "没有检测到chinadns-ng文件变更"
           fi
-          cd && cd pack && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
-          wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
-          file_name=${{ matrix.file_name }}
-
-          is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-
-          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
-          if [ ! -n "${{ matrix.hash_line }}" ] ; then
-            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          else
-            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          fi
-          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
-          echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
-          cd && cd pack
-          echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
-          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-
-          cd && cd $GITHUB_WORKSPACE
-          echo "branch_exists=$(git ls-remote --heads origin patches-${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-
-      - name: Create Pull Request
-        id: cpr
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && !cancelled()
-        uses: peter-evans/create-pull-request@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          committer: action <actions@github.com>
-          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          branch: patches-${{ matrix.pakcages }}-${{ steps.update.outputs.version }}
-          base: main
-          delete-branch: true
-          body: |
-            ${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}
-          title: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          labels: |
-            automated-pr
-          draft: false
