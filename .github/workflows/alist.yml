@@ -35,7 +35,7 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  # alist相关包串行执行
+  # 解决方案1：将alist相关包串行执行
   job_update_alist_group:
     if: ${{ always() }}
     needs: job_init
@@ -65,17 +65,18 @@ jobs:
             echo "alist_version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
             
             # 更新alist版本
-            sed -i "10c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            sed -i "10s/PKG_VERSION:=.*/PKG_VERSION:=$New_PKG_VERSION/" Makefile
             
             # 下载并计算hash
             cd ~/pack && mkdir -p alist && cd alist
-            wget https://codeload.github.com/alist-org/alist/tar.gz/v$New_PKG_VERSION
-            PKG_HASH=$(sha256sum v$New_PKG_VERSION | awk '{print $1}')
+            wget https://codeload.github.com/alist-org/alist/tar.gz/v$New_PKG_VERSION -O v$New_PKG_VERSION.tar.gz
+            PKG_HASH=$(sha256sum v$New_PKG_VERSION.tar.gz | awk '{print $1}')
             
             # 更新hash
             cd $GITHUB_WORKSPACE/alist
-            sed -i "16c PKG_HASH:=$PKG_HASH" Makefile
+            sed -i "16s/PKG_HASH:=.*/PKG_HASH:=$PKG_HASH/" Makefile
             echo "已更新alist版本到: $New_PKG_VERSION"
+            echo "已更新alist哈希到: $PKG_HASH"
           else
             echo "alist_updated=false" >> $GITHUB_OUTPUT
           fi
@@ -95,17 +96,18 @@ jobs:
             echo "web_version=$New_WEB_VERSION" >> $GITHUB_OUTPUT
             
             # 更新alist-web版本
-            sed -i "11c PKG_WEB_VERSION:=$New_WEB_VERSION" Makefile
+            sed -i "11s/PKG_WEB_VERSION:=.*/PKG_WEB_VERSION:=$New_WEB_VERSION/" Makefile
             
             # 下载并计算hash
             cd ~/pack && mkdir -p alist-web && cd alist-web
             wget https://github.com/alist-org/alist-web/releases/download/$New_WEB_VERSION/dist.tar.gz
             WEB_HASH=$(sha256sum dist.tar.gz | awk '{print $1}')
             
-            # 更新hash
+            # 更新hash - 注意这里需要匹配正确的行格式
             cd $GITHUB_WORKSPACE/alist
-            sed -i "26c   HASH:=$WEB_HASH" Makefile
+            sed -i "26s/.*HASH:=.*/  HASH:=$WEB_HASH/" Makefile
             echo "已更新alist-web版本到: $New_WEB_VERSION"
+            echo "已更新alist-web哈希到: $WEB_HASH"
           else
             echo "web_updated=false" >> $GITHUB_OUTPUT
           fi
@@ -174,7 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        packages: [adguardhome,v2raya]
+        packages: [adguardhome,adguardhome-frontend,v2raya,v2raya-web]
         include:
           - packages: adguardhome
             folder: adguardhome
