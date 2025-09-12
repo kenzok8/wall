@@ -35,226 +35,12 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'false' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  job_auto_update_packages:
+  # 串行执行所有naiveproxy架构，避免同时修改同一个Makefile
+  job_auto_update_naiveproxy:
     if: ${{ always() }}
     needs: job_init
     runs-on: ubuntu-latest
-    name: update-${{ matrix.pakcages }}
-    strategy:
-      fail-fast: false
-      matrix:
-        pakcages: [naiveproxy]
-        include:
-          - pakcages: naiveproxy-aarch64_cortex-a53
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 23
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-aarch64_cortex-a53.tar.xz
-            
-          - pakcages: naiveproxy-aarch64_cortex-a72
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 25
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-aarch64_cortex-a72.tar.xz
-
-          - pakcages: naiveproxy-aarch64_generic
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 27
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-aarch64_generic.tar.xz
-            
-          - pakcages: naiveproxy-arm_arm1176jzf-s_vfp
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 29
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_arm1176jzf-s_vfp.tar.xz        
-
-          - pakcages: naiveproxy-arm_arm926ej-s
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 31
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_arm926ej-s.tar.xz
-            
-          - pakcages: naiveproxy-arm_cortex-a15_neon-vfpv4
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 33
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a15_neon-vfpv4.tar.xz
-            
-          - pakcages: naiveproxy-arm_cortex-a5_vfpv4
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 35
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a5_vfpv4.tar.xz
-
-          - pakcages: naiveproxy-arm_cortex-a7
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 37
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a7.tar.xz
-            
-          - pakcages: naiveproxy-a7_neon-vfpv4
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 39
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a7_neon-vfpv4.tar.xz
-
-          - pakcages: naiveproxy-arm_cortex-a7_vfpv4
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 41
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a7_vfpv4.tar.xz
-            
-          - pakcages: naiveproxy-arm_cortex-a8_vfpv3
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 43
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a8_vfpv3.tar.xz        
-
-          - pakcages: naiveproxy-arm_cortex-a9
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 45
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a9.tar.xz
-            
-          - pakcages: naiveproxy-arm_cortex-a9_neon
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 47
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a9_neon.tar.xz
-            
-          - pakcages: naiveproxy-arm_cortex-a9_vfpv3-d16
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 49
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a9_vfpv3-d16.tar.xz
-
-          - pakcages: naiveproxy-arm_mpcore
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 51
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_mpcore.tar.xz
-            
-          - pakcages: naiveproxy-arm_xscale
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 53
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-arm_xscale.tar.xz
-
-          - pakcages: naiveproxy-mipsel_24kc
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 55
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-mipsel_24kc.tar.xz
-            
-          - pakcages: naiveproxy-mipsel_mips32
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 57
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-mipsel_mips32.tar.xz        
-
-          - pakcages: naiveproxy-riscv64
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 59
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-riscv64.tar.xz
-            
-          - pakcages: naiveproxy-x86
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 61
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-x86.tar.xz
-            
-          - pakcages: naiveproxy-x86_64
-            folder: naiveproxy
-            version_head: PKG_VERSION:=
-            hash_head: \  PKG_HASH:=
-            version_line:
-            hash_line: 63
-            release_api_command: curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//'
-            release_download_url: https://github.com/klzgrad/naiveproxy/releases/download/v
-            file_name: /naiveproxy-v$New_PKG_VERSION-openwrt-x86_64.tar.xz                      
-
+    name: update-naiveproxy-all-arch
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -264,81 +50,98 @@ jobs:
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check ${{ matrix.pakcages }}
-        id: check
+      - name: Check version and update all architectures
         run: |
-          is_continue=false
-
-          if [ "$is_continue" = "false" ]; then
-            cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-            if [ ! -n "${{ matrix.version_line }}" ] ; then
-              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
-            else
-              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
-            fi
-            New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}目前版本: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
-            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
-              echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
-            else 
-              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
-              echo "status=success" >> $GITHUB_OUTPUT;
-            fi
+          cd $GITHUB_WORKSPACE/naiveproxy
+          
+          # 检查版本
+          Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/klzgrad/naiveproxy/releases" | jq -r 'map(select(.prerelease == false)) | first | .tag_name' | sed -e 's/.*v//')
+          
+          echo "naiveproxy当前版本: $Old_PKG_VERSION"
+          echo "naiveproxy最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "检测到新版本，开始更新所有架构..."
+            
+            # 更新版本号
+            sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            echo "NAIVEPROXY_UPDATED=true" >> $GITHUB_ENV
+            echo "NAIVEPROXY_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
+            
+            # 创建下载目录
+            cd ~/pack && mkdir -p naiveproxy && cd naiveproxy
+            
+            # 定义所有架构和对应的哈希行及文件名
+            declare -A arch_files=(
+              [23]="naiveproxy-v$New_PKG_VERSION-openwrt-aarch64_cortex-a53.tar.xz"
+              [25]="naiveproxy-v$New_PKG_VERSION-openwrt-aarch64_cortex-a72.tar.xz"
+              [27]="naiveproxy-v$New_PKG_VERSION-openwrt-aarch64_generic.tar.xz"
+              [29]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_arm1176jzf-s_vfp.tar.xz"
+              [31]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_arm926ej-s.tar.xz"
+              [33]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a15_neon-vfpv4.tar.xz"
+              [35]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a5_vfpv4.tar.xz"
+              [37]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a7.tar.xz"
+              [39]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a7_neon-vfpv4.tar.xz"
+              [41]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a7_vfpv4.tar.xz"
+              [43]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a8_vfpv3.tar.xz"
+              [45]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a9.tar.xz"
+              [47]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a9_neon.tar.xz"
+              [49]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_cortex-a9_vfpv3-d16.tar.xz"
+              [51]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_mpcore.tar.xz"
+              [53]="naiveproxy-v$New_PKG_VERSION-openwrt-arm_xscale.tar.xz"
+              [55]="naiveproxy-v$New_PKG_VERSION-openwrt-mipsel_24kc.tar.xz"
+              [57]="naiveproxy-v$New_PKG_VERSION-openwrt-mipsel_mips32.tar.xz"
+              [59]="naiveproxy-v$New_PKG_VERSION-openwrt-riscv64.tar.xz"
+              [61]="naiveproxy-v$New_PKG_VERSION-openwrt-x86.tar.xz"
+              [63]="naiveproxy-v$New_PKG_VERSION-openwrt-x86_64.tar.xz"
+            )
+            
+            # 下载所有文件并计算哈希
+            for hash_line in "${!arch_files[@]}"; do
+              file_name="${arch_files[$hash_line]}"
+              echo "处理架构文件: $file_name (行号: $hash_line)"
+              
+              # 下载文件
+              wget -q "https://github.com/klzgrad/naiveproxy/releases/download/v$New_PKG_VERSION/$file_name"
+              
+              if [ -f "$file_name" ]; then
+                # 计算哈希
+                PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
+                echo "$file_name 哈希值: $PKG_HASH"
+                
+                # 更新对应行的哈希 (所有架构都使用2个空格缩进)
+                cd $GITHUB_WORKSPACE/naiveproxy
+                sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
+                
+                cd ~/pack/naiveproxy
+              else
+                echo "警告: 无法下载文件 $file_name"
+              fi
+            done
+            
+            echo "所有架构文件哈希更新完成"
           else
-            echo "status=failure" >> $GITHUB_OUTPUT;
+            echo "naiveproxy版本为最新版本,无需更新"
+            echo "NAIVEPROXY_UPDATED=false" >> $GITHUB_ENV
           fi
 
-      - name: Update ${{ matrix.pakcages }}
-        id: update
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+      - name: Commit and Push naiveproxy Changes
+        if: env.NAIVEPROXY_UPDATED == 'true'
         run: |
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          if [ ! -n "${{ matrix.version_line }}" ] ; then
-            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          cd $GITHUB_WORKSPACE
+          
+          # 配置git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # 检查是否有变更
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "检测到naiveproxy文件变更，准备提交..."
+            git add naiveproxy/Makefile
+            git commit -m "naiveproxy: update to $NAIVEPROXY_VERSION"
+            git push origin main
+            echo "✅ 已成功提交并推送 naiveproxy 更改到版本 $NAIVEPROXY_VERSION"
           else
-            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+            echo "没有检测到naiveproxy文件变更"
           fi
-          cd && cd pack && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
-          wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
-          file_name=${{ matrix.file_name }}
-
-          is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-
-          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
-          if [ ! -n "${{ matrix.hash_line }}" ] ; then
-            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          else
-            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          fi
-          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
-          echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
-          cd && cd pack
-          echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
-          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-
-          cd && cd $GITHUB_WORKSPACE
-          echo "branch_exists=$(git ls-remote --heads origin patches-${{ matrix.pakcages }}-$New_PKG_VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-
-      - name: Create Pull Request
-        id: cpr
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && steps.update.outputs.branch_exists == '' && !cancelled()
-        uses: peter-evans/create-pull-request@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          committer: action <actions@github.com>
-          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          branch: patches-${{ matrix.pakcages }}-${{ steps.update.outputs.version }}
-          base: main
-          delete-branch: false
-          body: |
-            ${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}
-          title: "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-          labels: |
-            automated-pr
-          draft: false
