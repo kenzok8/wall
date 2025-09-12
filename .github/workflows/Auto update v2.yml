@@ -352,8 +352,8 @@ jobs:
 
       - name: Initialization environment
         run: |
-          cd && mkdir -p main && cd main
           sudo timedatectl set-timezone "$TZ"
+          mkdir -p ~/main
 
       - name: Check ${{ matrix.pakcages }}
         id: check
@@ -361,14 +361,14 @@ jobs:
           is_continue=true
 
           if [ "$is_continue" = "true" ]; then
-            cd && cd work/wall/wall/${{ matrix.folder }} 
+            cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
             Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
             New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}当前版本: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
+            echo "${{ matrix.pakcages }} 当前版本: $Old_PKG_VERSION"
+            echo "${{ matrix.pakcages }} 最新版本: $New_PKG_VERSION"
             if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
               echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
+              echo "${{ matrix.pakcages }} 版本为最新版本 $New_PKG_VERSION，无需更新"; 
             else 
               echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
               echo "status=success" >> $GITHUB_OUTPUT;
@@ -381,36 +381,44 @@ jobs:
         id: update
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
-          cd && cd work/wall/wall/${{ matrix.folder }}
+          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile
-          cd && cd main && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
-          wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
-          file_name=${{ matrix.file_name }}
+          
+          mkdir -p ~/main/${{ matrix.pakcages }}
+          cd ~/main/${{ matrix.pakcages }}
+          
+          wget -P ./ ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
+          
+          file_name="${{ matrix.file_name }}"
           is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
-          cd && cd work/wall/wall/${{ matrix.folder }} 
+          if [ ! -n "${{ matrix.file_name }}" ]; then 
+            PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION | awk '{print $1}')
+          else 
+            PKG_HASH=$(sha256sum ${file_name##*/} | awk '{print $1}')
+          fi
+          
+          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
-          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
-          echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
-          cd && cd main
-          echo ":white_check_mark: ${{ matrix.pakcages }}: update to $New_PKG_VERSION" >> commit_messages.txt
+          
+          echo "已更新 ${{ matrix.pakcages }} 版本到: $New_PKG_VERSION"
+          echo "${{ matrix.pakcages }} Hash: $PKG_HASH"
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and Push ${{ matrix.pakcages }} Changes
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
-          cd work/wall/wall
+          cd $GITHUB_WORKSPACE
           
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           
           if [ -n "$(git status --porcelain)" ]; then
-            echo "检测到${{ matrix.pakcages }}文件变更，准备提交..."
+            echo "检测到 ${{ matrix.pakcages }} 文件变更，准备提交..."
             git add ${{ matrix.folder }}/Makefile
             git commit -m "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
             git push origin main
             echo "✅ 已成功提交并推送 ${{ matrix.pakcages }} 更改到版本 ${{ steps.update.outputs.version }}"
           else
-            echo "没有检测到${{ matrix.pakcages }}文件变更"
+            echo "没有检测到 ${{ matrix.pakcages }} 文件变更"
           fi
