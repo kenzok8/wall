@@ -35,7 +35,6 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  # 由于所有chinadns-ng架构都使用同一个版本号和同一个Makefile，需要串行执行避免冲突
   job_auto_update_chinadns_ng:
     if: ${{ always() }}
     needs: job_init
@@ -54,7 +53,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/chinadns-ng
           
-          # 检查版本
           Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//')
           
@@ -64,12 +62,10 @@ jobs:
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
             echo "检测到新版本，开始更新所有架构..."
             
-            # 更新版本号
             sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
             echo "CHINADNS_UPDATED=true" >> $GITHUB_ENV
             echo "CHINADNS_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
             
-            # 创建下载目录
             cd ~/pack && mkdir -p chinadns-ng && cd chinadns-ng
             
             # 定义所有架构和对应的哈希行
@@ -85,26 +81,22 @@ jobs:
               [40]="chinadns-ng+wolfssl@x86_64-linux-musl@x86_64@fast+lto"
             )
             
-            # 下载所有文件并计算哈希
             for hash_line in "${!arch_files[@]}"; do
               file_name="${arch_files[$hash_line]}"
               echo "处理架构文件: $file_name (行号: $hash_line)"
-              
-              # 下载文件
+
               wget -q "https://github.com/zfl9/chinadns-ng/releases/download/$New_PKG_VERSION/$file_name"
               
               if [ -f "$file_name" ]; then
-                # 计算哈希
+
                 PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
                 echo "$file_name 哈希值: $PKG_HASH"
-                
-                # 更新对应行的哈希
+
                 cd $GITHUB_WORKSPACE/chinadns-ng
                 if [ "$hash_line" -eq 12 ] || [ "$hash_line" -eq 15 ] || [ "$hash_line" -eq 21 ] || [ "$hash_line" -eq 24 ]; then
                   # aarch64 和 arm 架构使用4个空格缩进
                   sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
                 else
-                  # 其他架构使用2个空格缩进
                   sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
                 fi
                 
@@ -124,12 +116,10 @@ jobs:
         if: env.CHINADNS_UPDATED == 'true'
         run: |
           cd $GITHUB_WORKSPACE
-          
-          # 配置git
+
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          
-          # 检查是否有变更
+
           if [ -n "$(git status --porcelain)" ]; then
             echo "检测到chinadns-ng文件变更，准备提交..."
             git add chinadns-ng/Makefile
