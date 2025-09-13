@@ -1,4 +1,4 @@
-name: "gn & other git packages"
+name: "gn auto update"
 on:
   repository_dispatch:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: false
         default: 'false'
   schedule:
-    - cron: "0 */12 * * *"  # 每12小时运行一次
+    - cron: "0 */12 * * *"
 env:
   TZ: Asia/Shanghai
 
@@ -36,31 +36,11 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  # 自动提交所有Git包的更新
-  job_auto_update_git_packages:
+  job_auto_update_gn:
     if: ${{ always() }}
     needs: job_init
     runs-on: ubuntu-latest
-    name: update-${{ matrix.packages }} 
-    strategy:
-      fail-fast: false
-      matrix:
-        packages: [gn]
-        include:
-          - packages: gn
-            folder: gn
-            version_line: 12
-            hash_line: 13 
-            date_line: 11
-            version_head: PKG_SOURCE_VERSION:=
-            hash_head: PKG_MIRROR_HASH:=
-            date_head: PKG_SOURCE_DATE:=
-            git_repo: https://gn.googlesource.com/gn.git
-            git_ref: refs/heads/main
-            # GN 特殊配置
-            has_commit_position: true
-            commit_position_file: gn/src/out/last_commit_position.h
-
+    name: update-gn-package
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -70,175 +50,130 @@ jobs:
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check ${{ matrix.packages }}
+      - name: Check gn version
         id: check
         run: |
-          is_continue=true
-
-          if [ "$is_continue" = "true" ]; then
-            cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-            
-            # 获取当前版本信息
-            if [ ! -n "${{ matrix.version_line }}" ] ; then
-              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
-            else
-              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
-            fi
-            
-            if [ ! -n "${{ matrix.date_line }}" ] ; then
-              Old_PKG_DATE=$(sed -n '/^${{ matrix.date_head }}/p' Makefile | awk -F '=' '{print $2}');
-            else
-              Old_PKG_DATE=$(sed -n '${{ matrix.date_line }}p' Makefile | awk -F '=' '{print $2}');
-            fi
-            
-            # 获取最新版本
-            New_PKG_VERSION=$(git ls-remote ${{ matrix.git_repo }} ${{ matrix.git_ref }} | cut -f1)
-            New_PKG_DATE=$(date +%Y-%m-%d)
-            
-            echo "${{ matrix.packages }}当前版本: ${Old_PKG_VERSION:0:8}..."
-            echo "${{ matrix.packages }}最新版本: ${New_PKG_VERSION:0:8}..."
-            echo "${{ matrix.packages }}当前日期: $Old_PKG_DATE"
-            echo "${{ matrix.packages }}最新日期: $New_PKG_DATE"
-            
-            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
-              echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.packages }}版本为最新版本${New_PKG_VERSION:0:8}...,无需更新"; 
-            else 
-              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
-              echo "New_PKG_DATE=$New_PKG_DATE" >> $GITHUB_OUTPUT;
-              echo "status=success" >> $GITHUB_OUTPUT;
-              echo "发现${{ matrix.packages }}新版本: ${New_PKG_VERSION:0:8}...";
-            fi
+          cd $GITHUB_WORKSPACE/gn
+          Old_PKG_VERSION=$(sed -n '/^PKG_SOURCE_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_DATE=$(sed -n '/^PKG_SOURCE_DATE:=/p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
+          New_PKG_DATE=$(date +%Y-%m-%d)
+          
+          echo "gn当前版本: ${Old_PKG_VERSION:0:8}..."
+          echo "gn最新版本: ${New_PKG_VERSION:0:8}..."
+          echo "gn当前日期: $Old_PKG_DATE"
+          echo "gn最新日期: $New_PKG_DATE"
+          
+          if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "gn版本为最新版本,无需更新"
           else
-            echo "status=failure" >> $GITHUB_OUTPUT;
+            echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+            echo "New_PKG_DATE=$New_PKG_DATE" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "发现gn新版本: ${New_PKG_VERSION:0:8}..."
           fi
 
-      - name: Update ${{ matrix.packages }}
+      - name: Update gn
         id: update
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
-          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+          cd $GITHUB_WORKSPACE/gn
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           New_PKG_DATE=${{ steps.check.outputs.New_PKG_DATE }}
           
-          echo "更新${{ matrix.packages }}到版本: ${New_PKG_VERSION:0:8}..."
+          echo "🚀 更新gn到版本: ${New_PKG_VERSION:0:8}..."
+          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=$New_PKG_VERSION" Makefile
+          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$New_PKG_DATE" Makefile
+          cd ~/pack && mkdir -p gn && cd gn
+          echo "📦 正在克隆gn仓库..."
           
-          # 更新版本号
-          if [ ! -n "${{ matrix.version_line }}" ] ; then
-            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
-          else
-            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
-          fi
-          
-          # 更新日期
-          if [ ! -n "${{ matrix.date_line }}" ] ; then
-            sed -i "/^${{ matrix.date_head }}/c\${{ matrix.date_head }}$New_PKG_DATE" Makefile;
-          else
-            sed -i "${{ matrix.date_line }}c ${{ matrix.date_head }}$New_PKG_DATE" Makefile;
-          fi
-          
-          # 下载源码并计算hash
-          cd ~/pack && mkdir -p ${{ matrix.packages }} && cd ${{ matrix.packages }}
-          echo "正在克隆${{ matrix.packages }}仓库..."
-          git clone --depth 50 ${{ matrix.git_repo }} ${{ matrix.packages }}-source
-          cd ${{ matrix.packages }}-source
-          
-          # 检出指定commit
-          git fetch --depth 50 origin $New_PKG_VERSION
+          # 克隆完整历史记录以准确计算 commit position
+          git clone https://gn.googlesource.com/gn.git gn-source
+          cd gn-source
           git checkout $New_PKG_VERSION
           
-          # 获取 commit position（GN 特殊处理）
-          COMMIT_POSITION=""
-          if [ "${{ matrix.has_commit_position }}" = "true" ]; then
-            echo "获取 commit position..."
-            # 查找最近的 Cr-Commit-Position
-            COMMIT_POSITION=$(git log --max-count=100 --grep="Cr-Commit-Position" | grep -o "Cr-Commit-Position: refs/heads/master@{#[0-9]*}" | head -n 1 | grep -o "[0-9]*" | head -n 1)
-            
-            if [ -z "$COMMIT_POSITION" ]; then
-              # 如果没找到，使用 git rev-list 计算提交数量作为近似值
-              COMMIT_POSITION=$(git rev-list --count HEAD)
-              echo "未找到 Cr-Commit-Position，使用提交数量: $COMMIT_POSITION"
-            else
-              echo "找到 Cr-Commit-Position: $COMMIT_POSITION"
-            fi
-          fi
-          
-          # 删除.git目录
+          # 🎯 关键修复：使用 git rev-list 准确计算 commit position
+          echo "🔢 计算 commit position..."
+          COMMIT_POSITION=$(git rev-list --count HEAD)
+          echo "✅ Commit Position: $COMMIT_POSITION"
+
           rm -rf .git
-          
-          # 打包并计算hash
           cd ..
-          tar -cJf ${{ matrix.packages }}-source.tar.xz ${{ matrix.packages }}-source/
-          PKG_HASH=$(sha256sum ${{ matrix.packages }}-source.tar.xz | awk '{print $1}')
+          tar -cJf gn-source.tar.xz gn-source/
+          PKG_HASH=$(sha256sum gn-source.tar.xz | awk '{print $1}')
+          cd $GITHUB_WORKSPACE/gn
+          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$PKG_HASH" Makefile
           
-          # 更新hash值
-          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-          if [ ! -n "${{ matrix.hash_line }}" ] ; then
-            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          else
-            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
-          fi
+          # 🎯 更新 last_commit_position.h 文件
+          COMMIT_POSITION_FILE="gn/src/out/last_commit_position.h"
+          echo "📝 更新 commit position 文件: $COMMIT_POSITION_FILE"
           
-          # 更新 commit position 文件（如果需要）
-          if [ "${{ matrix.has_commit_position }}" = "true" ] && [ -n "$COMMIT_POSITION" ]; then
-            echo "更新 commit position 文件..."
-            COMMIT_POSITION_FILE="${{ matrix.commit_position_file }}"
+          if [ -f "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" ]; then
+            echo "当前文件内容:"
+            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
             
-            if [ -f "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" ]; then
-              # 更新第6行 LAST_COMMIT_POSITION_NUM
-              sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM $COMMIT_POSITION/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-              
-              # 更新第7行 LAST_COMMIT_POSITION 
-              SHORT_COMMIT=${New_PKG_VERSION:0:12}
-              sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-              
-              echo "已更新 commit position: $COMMIT_POSITION ($SHORT_COMMIT)"
+            # 更新第6行 LAST_COMMIT_POSITION_NUM
+            sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM $COMMIT_POSITION/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
+            
+            # 更新第7行 LAST_COMMIT_POSITION 
+            SHORT_COMMIT=${New_PKG_VERSION:0:12}
+            sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
+            
+            echo "更新后文件内容:"
+            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
+            
+            # 验证更新
+            if grep -q "LAST_COMMIT_POSITION_NUM $COMMIT_POSITION" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"; then
+              echo "✅ LAST_COMMIT_POSITION_NUM 更新成功: $COMMIT_POSITION"
             else
-              echo "警告: commit position 文件不存在: $COMMIT_POSITION_FILE"
+              echo "❌ LAST_COMMIT_POSITION_NUM 更新失败"
             fi
+            
+            if grep -q "LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"; then
+              echo "✅ LAST_COMMIT_POSITION 更新成功: $COMMIT_POSITION ($SHORT_COMMIT)"
+            else
+              echo "❌ LAST_COMMIT_POSITION 更新失败"
+            fi
+          else
+            echo "⚠️  警告: 文件不存在: $COMMIT_POSITION_FILE"
+            echo "搜索可能的位置..."
+            find "$GITHUB_WORKSPACE" -name "last_commit_position.h" -type f || echo "未找到文件"
           fi
           
           echo "📊 更新总结:"
-          echo "- 包名: ${{ matrix.packages }}"
           echo "- 版本: ${New_PKG_VERSION:0:8}...${New_PKG_VERSION:32}"
+          echo "- 日期: $New_PKG_DATE"
           echo "- Hash: $PKG_HASH"
-          if [ -n "$COMMIT_POSITION" ]; then
-            echo "- Commit Position: $COMMIT_POSITION"
-          fi
-          echo "✅ ${{ matrix.packages }} 更新完成!"
+          echo "- Commit Position: $COMMIT_POSITION"
+          echo "✅ GN 更新完成!"
           
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
           echo "short_version=${New_PKG_VERSION:0:8}" >> $GITHUB_OUTPUT
           echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
 
-      - name: Commit and Push ${{ matrix.packages }} Changes
+      - name: Commit and Push gn Changes
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
           cd $GITHUB_WORKSPACE
-          
-          # 配置git
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           
           # 检查是否有变更
           if [ -n "$(git status --porcelain)" ]; then
-            echo "检测到${{ matrix.packages }}文件变更，准备提交..."
+            echo "📝 检测到gn文件变更，准备提交..."
             
             # 添加所有相关文件
-            git add ${{ matrix.folder }}/Makefile
-            if [ "${{ matrix.has_commit_position }}" = "true" ] && [ -f "${{ matrix.commit_position_file }}" ]; then
-              git add ${{ matrix.commit_position_file }}
-            fi
+            git add gn/Makefile
+            git add gn/src/out/last_commit_position.h
             
             # 生成提交信息
-            COMMIT_MSG="${{ matrix.packages }}: update to ${{ steps.update.outputs.short_version }}"
-            if [ -n "${{ steps.update.outputs.commit_position }}" ]; then
-              COMMIT_MSG="$COMMIT_MSG (cr-pos-${{ steps.update.outputs.commit_position }})"
-            fi
+            COMMIT_MSG="gn: update to ${{ steps.update.outputs.short_version }} (cr-pos-${{ steps.update.outputs.commit_position }})"
             
+            echo "提交信息: $COMMIT_MSG"
             git commit -m "$COMMIT_MSG"
             git push origin main
-            echo "✅ 已成功提交并推送 ${{ matrix.packages }} 更改: $COMMIT_MSG"
+            echo "✅ 已成功提交并推送gn更改: $COMMIT_MSG"
           else
-            echo "没有检测到${{ matrix.packages }}文件变更"
+            echo "没有检测到gn文件变更"
           fi
