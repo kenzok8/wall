@@ -1,0 +1,185 @@
+name: "gn & other git packages"
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: "0 */12 * * *" 
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  job_init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 1
+          keep_minimum_runs: 1
+        
+      - name: SSH connection to Actions
+        uses: kenzok78/ssh-action@master
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+
+  # 自动提交所有Git包的更新
+  job_auto_update_git_packages:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    name: update-${{ matrix.packages }} 
+    strategy:
+      fail-fast: false
+      matrix:
+        packages: [gn]
+        include:
+          - packages: gn
+            folder: gn
+            version_line: 12
+            hash_line: 13 
+            date_line: 11
+            version_head: PKG_SOURCE_VERSION:=
+            hash_head: PKG_MIRROR_HASH:=
+            date_head: PKG_SOURCE_DATE:=
+            git_repo: https://gn.googlesource.com/gn.git
+            git_ref: refs/heads/main
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        run: |
+          cd && mkdir -p pack && cd pack
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Check ${{ matrix.packages }}
+        id: check
+        run: |
+          is_continue=true
+
+          if [ "$is_continue" = "true" ]; then
+            cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+            
+            # 获取当前版本信息
+            if [ ! -n "${{ matrix.version_line }}" ] ; then
+              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
+            else
+              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
+            fi
+            
+            if [ ! -n "${{ matrix.date_line }}" ] ; then
+              Old_PKG_DATE=$(sed -n '/^${{ matrix.date_head }}/p' Makefile | awk -F '=' '{print $2}');
+            else
+              Old_PKG_DATE=$(sed -n '${{ matrix.date_line }}p' Makefile | awk -F '=' '{print $2}');
+            fi
+            
+            # 获取最新版本
+            New_PKG_VERSION=$(git ls-remote ${{ matrix.git_repo }} ${{ matrix.git_ref }} | cut -f1)
+            New_PKG_DATE=$(date +%Y-%m-%d)
+            
+            echo "${{ matrix.packages }}当前版本: ${Old_PKG_VERSION:0:8}..."
+            echo "${{ matrix.packages }}最新版本: ${New_PKG_VERSION:0:8}..."
+            echo "${{ matrix.packages }}当前日期: $Old_PKG_DATE"
+            echo "${{ matrix.packages }}最新日期: $New_PKG_DATE"
+            
+            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
+              echo "status=failure" >> $GITHUB_OUTPUT; 
+              echo "${{ matrix.packages }}版本为最新版本${New_PKG_VERSION:0:8}...,无需更新"; 
+            else 
+              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
+              echo "New_PKG_DATE=$New_PKG_DATE" >> $GITHUB_OUTPUT;
+              echo "status=success" >> $GITHUB_OUTPUT;
+              echo "发现${{ matrix.packages }}新版本: ${New_PKG_VERSION:0:8}...";
+            fi
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT;
+          fi
+
+      - name: Update ${{ matrix.packages }}
+        id: update
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
+          New_PKG_DATE=${{ steps.check.outputs.New_PKG_DATE }}
+          
+          echo "更新${{ matrix.packages }}到版本: ${New_PKG_VERSION:0:8}..."
+          
+          # 更新版本号
+          if [ ! -n "${{ matrix.version_line }}" ] ; then
+            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          else
+            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+          fi
+          
+          # 更新日期
+          if [ ! -n "${{ matrix.date_line }}" ] ; then
+            sed -i "/^${{ matrix.date_head }}/c\${{ matrix.date_head }}$New_PKG_DATE" Makefile;
+          else
+            sed -i "${{ matrix.date_line }}c ${{ matrix.date_head }}$New_PKG_DATE" Makefile;
+          fi
+          
+          # 下载源码并计算hash
+          cd ~/pack && mkdir -p ${{ matrix.packages }} && cd ${{ matrix.packages }}
+          echo "正在克隆${{ matrix.packages }}仓库..."
+          git clone --depth 1 ${{ matrix.git_repo }} ${{ matrix.packages }}-source
+          cd ${{ matrix.packages }}-source
+          
+          # 检出指定commit
+          git fetch --depth 1 origin $New_PKG_VERSION
+          git checkout $New_PKG_VERSION
+          
+          # 删除.git目录
+          rm -rf .git
+          
+          # 打包并计算hash
+          cd ..
+          tar -cJf ${{ matrix.packages }}-source.tar.xz ${{ matrix.packages }}-source/
+          PKG_HASH=$(sha256sum ${{ matrix.packages }}-source.tar.xz | awk '{print $1}')
+          
+          # 更新hash值
+          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+          if [ ! -n "${{ matrix.hash_line }}" ] ; then
+            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
+          else
+            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
+          fi
+          
+          echo "已更新${{ matrix.packages }}版本到: ${New_PKG_VERSION:0:8}..."
+          echo "${{ matrix.packages }} Hash:$PKG_HASH"
+          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+          echo "short_version=${New_PKG_VERSION:0:8}" >> $GITHUB_OUTPUT
+
+      - name: Commit and Push ${{ matrix.packages }} Changes
+        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+        run: |
+          cd $GITHUB_WORKSPACE
+          
+          # 配置git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # 检查是否有变更
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "检测到${{ matrix.packages }}文件变更，准备提交..."
+            git add ${{ matrix.folder }}/Makefile
+            git commit -m "${{ matrix.packages }}: update to ${{ steps.update.outputs.short_version }}"
+            git push origin main
+            echo "✅ 已成功提交并推送 ${{ matrix.packages }} 更改到版本 ${{ steps.update.outputs.short_version }}"
+          else
+            echo "没有检测到${{ matrix.packages }}文件变更"
+          fi
