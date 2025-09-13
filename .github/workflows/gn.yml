@@ -8,7 +8,7 @@ on:
         required: false
         default: 'false'
   schedule:
-    - cron: "0 */12 * * *" 
+    - cron: "0 */12 * * *"  # 每12小时运行一次
 env:
   TZ: Asia/Shanghai
 
@@ -24,7 +24,8 @@ jobs:
           sudo timedatectl set-timezone "$TZ"
 
       - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@main
+        continue-on-error: true
+        uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -56,6 +57,9 @@ jobs:
             date_head: PKG_SOURCE_DATE:=
             git_repo: https://gn.googlesource.com/gn.git
             git_ref: refs/heads/main
+            # GN 特殊配置
+            has_commit_position: true
+            commit_position_file: gn/src/out/last_commit_position.h
 
     steps:
       - name: Checkout
@@ -136,12 +140,28 @@ jobs:
           # 下载源码并计算hash
           cd ~/pack && mkdir -p ${{ matrix.packages }} && cd ${{ matrix.packages }}
           echo "正在克隆${{ matrix.packages }}仓库..."
-          git clone --depth 1 ${{ matrix.git_repo }} ${{ matrix.packages }}-source
+          git clone --depth 50 ${{ matrix.git_repo }} ${{ matrix.packages }}-source
           cd ${{ matrix.packages }}-source
           
           # 检出指定commit
-          git fetch --depth 1 origin $New_PKG_VERSION
+          git fetch --depth 50 origin $New_PKG_VERSION
           git checkout $New_PKG_VERSION
+          
+          # 获取 commit position（GN 特殊处理）
+          COMMIT_POSITION=""
+          if [ "${{ matrix.has_commit_position }}" = "true" ]; then
+            echo "获取 commit position..."
+            # 查找最近的 Cr-Commit-Position
+            COMMIT_POSITION=$(git log --max-count=100 --grep="Cr-Commit-Position" | grep -o "Cr-Commit-Position: refs/heads/master@{#[0-9]*}" | head -n 1 | grep -o "[0-9]*" | head -n 1)
+            
+            if [ -z "$COMMIT_POSITION" ]; then
+              # 如果没找到，使用 git rev-list 计算提交数量作为近似值
+              COMMIT_POSITION=$(git rev-list --count HEAD)
+              echo "未找到 Cr-Commit-Position，使用提交数量: $COMMIT_POSITION"
+            else
+              echo "找到 Cr-Commit-Position: $COMMIT_POSITION"
+            fi
+          fi
           
           # 删除.git目录
           rm -rf .git
@@ -159,10 +179,37 @@ jobs:
             sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
           fi
           
-          echo "已更新${{ matrix.packages }}版本到: ${New_PKG_VERSION:0:8}..."
-          echo "${{ matrix.packages }} Hash:$PKG_HASH"
+          # 更新 commit position 文件（如果需要）
+          if [ "${{ matrix.has_commit_position }}" = "true" ] && [ -n "$COMMIT_POSITION" ]; then
+            echo "更新 commit position 文件..."
+            COMMIT_POSITION_FILE="${{ matrix.commit_position_file }}"
+            
+            if [ -f "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" ]; then
+              # 更新第6行 LAST_COMMIT_POSITION_NUM
+              sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM $COMMIT_POSITION/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
+              
+              # 更新第7行 LAST_COMMIT_POSITION 
+              SHORT_COMMIT=${New_PKG_VERSION:0:12}
+              sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
+              
+              echo "已更新 commit position: $COMMIT_POSITION ($SHORT_COMMIT)"
+            else
+              echo "警告: commit position 文件不存在: $COMMIT_POSITION_FILE"
+            fi
+          fi
+          
+          echo "📊 更新总结:"
+          echo "- 包名: ${{ matrix.packages }}"
+          echo "- 版本: ${New_PKG_VERSION:0:8}...${New_PKG_VERSION:32}"
+          echo "- Hash: $PKG_HASH"
+          if [ -n "$COMMIT_POSITION" ]; then
+            echo "- Commit Position: $COMMIT_POSITION"
+          fi
+          echo "✅ ${{ matrix.packages }} 更新完成!"
+          
           echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
           echo "short_version=${New_PKG_VERSION:0:8}" >> $GITHUB_OUTPUT
+          echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
 
       - name: Commit and Push ${{ matrix.packages }} Changes
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
@@ -176,10 +223,22 @@ jobs:
           # 检查是否有变更
           if [ -n "$(git status --porcelain)" ]; then
             echo "检测到${{ matrix.packages }}文件变更，准备提交..."
+            
+            # 添加所有相关文件
             git add ${{ matrix.folder }}/Makefile
-            git commit -m "${{ matrix.packages }}: update to ${{ steps.update.outputs.short_version }}"
+            if [ "${{ matrix.has_commit_position }}" = "true" ] && [ -f "${{ matrix.commit_position_file }}" ]; then
+              git add ${{ matrix.commit_position_file }}
+            fi
+            
+            # 生成提交信息
+            COMMIT_MSG="${{ matrix.packages }}: update to ${{ steps.update.outputs.short_version }}"
+            if [ -n "${{ steps.update.outputs.commit_position }}" ]; then
+              COMMIT_MSG="$COMMIT_MSG (cr-pos-${{ steps.update.outputs.commit_position }})"
+            fi
+            
+            git commit -m "$COMMIT_MSG"
             git push origin main
-            echo "✅ 已成功提交并推送 ${{ matrix.packages }} 更改到版本 ${{ steps.update.outputs.short_version }}"
+            echo "✅ 已成功提交并推送 ${{ matrix.packages }} 更改: $COMMIT_MSG"
           else
             echo "没有检测到${{ matrix.packages }}文件变更"
           fi
