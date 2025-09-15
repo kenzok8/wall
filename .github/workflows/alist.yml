@@ -259,6 +259,7 @@ jobs:
             echo "检测到${{ matrix.pakcages }}文件变更，准备提交..."
             git add ${{ matrix.folder }}/Makefile
             git commit -m "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
+            git pull --rebase origin main
             git push origin main
             echo "✅ 已成功提交并推送 ${{ matrix.pakcages }} 更改到版本 ${{ steps.update.outputs.version }}"
           else
