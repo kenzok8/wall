@@ -224,22 +224,26 @@ jobs:
           cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           if [ ! -n "${{ matrix.version_line }}" ] ; then
-            sed -i "/^${{ matrix.version_head }}/c\${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+            sed -i -E "s/^([[:space:]]*)${{ matrix.version_head }}.*/\1${{ matrix.version_head }}$New_PKG_VERSION/" Makefile;
           else
-            sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+            indent=$(sed -n "${{ matrix.version_line }}s/^\([[:space:]]*\).*$/\1/p" Makefile);
+            sed -i "${{ matrix.version_line }}c ${indent}${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
           fi
           cd && cd pack && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
           wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
           file_name=${{ matrix.file_name }}
-
           is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-
-          if [ ! -n "${{ matrix.file_name }}" ]; then PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}; else PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}; fi;
+          if [ ! -n "${{ matrix.file_name }}" ]; then
+            PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
+          else
+            PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}
+          fi
           cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
           if [ ! -n "${{ matrix.hash_line }}" ] ; then
-            sed -i "/^${{ matrix.hash_head }}/c\${{ matrix.hash_head }}$PKG_HASH" Makefile;
+            sed -i -E "s/^([[:space:]]*)${{ matrix.hash_head }}.*/\1${{ matrix.hash_head }}$PKG_HASH/" Makefile;
           else
-            sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile;
+            indent=$(sed -n "${{ matrix.hash_line }}s/^\([[:space:]]*\).*$/\1/p" Makefile);
+            sed -i "${{ matrix.hash_line }}c ${indent}${{ matrix.hash_head }}$PKG_HASH" Makefile; 
           fi
           echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
