@@ -54,7 +54,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/alist
           Old_PKG_VERSION=$(sed -n '10p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/AlistGo/alist/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/AlistGo/alist/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           
           echo "alist当前版本: $Old_PKG_VERSION"
           echo "alist最新版本: $New_PKG_VERSION"
@@ -81,7 +81,7 @@ jobs:
           sleep 1
           cd $GITHUB_WORKSPACE/alist
           Old_WEB_VERSION=$(sed -n '11p' Makefile | awk -F '=' '{print $2}')
-          New_WEB_VERSION=$(curl -sL "https://api.github.com/repos/AlistGo/alist-web/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+          New_WEB_VERSION=$(curl -sL "https://api.github.com/repos/AlistGo/alist-web/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
           
           echo "alist-web当前版本: $Old_WEB_VERSION"
           echo "alist-web最新版本: $New_WEB_VERSION"
