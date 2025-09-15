@@ -35,7 +35,6 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  # 串行执行alist相关包，避免同时修改同一个Makefile，然后自动提交
   job_auto_update_alist:
     if: ${{ always() }}
     needs: job_init
@@ -107,13 +106,8 @@ jobs:
         if: env.ALIST_UPDATED == 'true' || env.ALIST_WEB_UPDATED == 'true'
         run: |
           cd $GITHUB_WORKSPACE
-          
-          # 配置git
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          
-          # Pull latest changes first to avoid conflicts
-          git pull origin main
           
           # 检查是否有变更
           if [ -n "$(git status --porcelain)" ]; then
@@ -131,150 +125,43 @@ jobs:
             fi
             
             git commit -m "$commit_msg"
-            
-            # Retry push with pull in case of conflicts
-            for i in {1..3}; do
-              if git push origin main; then
-                echo "✅ 已成功提交并推送alist更改: $commit_msg"
-                break
-              else
-                echo "Push failed, attempt $i/3. Pulling and retrying..."
-                git pull origin main --rebase
-                if [ $i -eq 3 ]; then
-                  echo "❌ Failed to push after 3 attempts"
-                  exit 1
-                fi
-              fi
-            done
+            git push origin main
+            echo "✅ 已成功提交并推送alist更改: $commit_msg"
           else
             echo "没有检测到alist相关文件变更"
           fi
 
-  # 串行执行adguardhome相关包，避免同时修改同一个Makefile，然后自动提交
-  job_auto_update_adguardhome:
-    if: ${{ always() }}
-    needs: [job_init, job_auto_update_alist]
-    runs-on: ubuntu-latest
-    name: update-adguardhome-packages
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
-
-      - name: Initialization environment
-        run: |
-          cd && mkdir -p pack && cd pack
-          sudo timedatectl set-timezone "$TZ"
-
-      - name: Update adguardhome
-        run: |
-          cd $GITHUB_WORKSPACE/adguardhome
-          Old_PKG_VERSION=$(sed -n '9p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-          
-          echo "adguardhome当前版本: $Old_PKG_VERSION"
-          echo "adguardhome最新版本: $New_PKG_VERSION"
-          
-          if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
-            echo "更新adguardhome到版本: $New_PKG_VERSION"
-            sed -i "9c PKG_VERSION:=$New_PKG_VERSION" Makefile
-            
-            cd ~/pack && mkdir -p adguardhome && cd adguardhome
-            wget https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v$New_PKG_VERSION
-            PKG_HASH=$(sha256sum v$New_PKG_VERSION | awk '{print $1}')
-            
-            cd $GITHUB_WORKSPACE/adguardhome
-            sed -i "14c PKG_HASH:=$PKG_HASH" Makefile
-            echo "ADGUARD_UPDATED=true" >> $GITHUB_ENV
-            echo "ADGUARD_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
-          else
-            echo "adguardhome版本为最新版本,无需更新"
-            echo "ADGUARD_UPDATED=false" >> $GITHUB_ENV
-          fi
-
-      - name: Update adguardhome-frontend
-        run: |
-          sleep 1
-          cd $GITHUB_WORKSPACE/adguardhome
-          Old_FRONTEND_VERSION=$(sed -n '9p' Makefile | awk -F '=' '{print $2}')
-          New_FRONTEND_VERSION=$(curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-          
-          echo "adguardhome-frontend当前版本: $Old_FRONTEND_VERSION"
-          echo "adguardhome-frontend最新版本: $New_FRONTEND_VERSION"
-          
-          if [ "$Old_FRONTEND_VERSION" != "$New_FRONTEND_VERSION" ]; then
-            echo "更新adguardhome-frontend到版本: $New_FRONTEND_VERSION"
-            
-            cd ~/pack && mkdir -p adguardhome-frontend && cd adguardhome-frontend
-            wget https://github.com/AdguardTeam/AdGuardHome/releases/download/v$New_FRONTEND_VERSION/AdGuardHome_frontend.tar.gz
-            FRONTEND_HASH=$(sha256sum AdGuardHome_frontend.tar.gz | awk '{print $1}')
-            
-            cd $GITHUB_WORKSPACE/adguardhome
-            sed -i "61c \	HASH:=$FRONTEND_HASH" Makefile
-            echo "ADGUARD_FRONTEND_UPDATED=true" >> $GITHUB_ENV
-            echo "ADGUARD_FRONTEND_VERSION=$New_FRONTEND_VERSION" >> $GITHUB_ENV
-          else
-            echo "adguardhome-frontend版本为最新版本,无需更新"
-            echo "ADGUARD_FRONTEND_UPDATED=false" >> $GITHUB_ENV
-          fi
-
-      - name: Commit and Push adguardhome Changes
-        if: env.ADGUARD_UPDATED == 'true' || env.ADGUARD_FRONTEND_UPDATED == 'true'
-        run: |
-          cd $GITHUB_WORKSPACE
-          
-          # 配置git
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          
-          # Pull latest changes first to avoid conflicts
-          git pull origin main
-          
-          # 检查是否有变更
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "检测到adguardhome相关文件变更，准备提交..."
-            git add adguardhome/Makefile
-            
-            # 生成提交信息
-            commit_msg=""
-            if [ "$ADGUARD_UPDATED" = "true" ] && [ "$ADGUARD_FRONTEND_UPDATED" = "true" ]; then
-              commit_msg="adguardhome: update to $ADGUARD_VERSION, adguardhome-frontend: update to $ADGUARD_FRONTEND_VERSION"
-            elif [ "$ADGUARD_UPDATED" = "true" ]; then
-              commit_msg="adguardhome: update to $ADGUARD_VERSION"
-            elif [ "$ADGUARD_FRONTEND_UPDATED" = "true" ]; then
-              commit_msg="adguardhome-frontend: update to $ADGUARD_FRONTEND_VERSION"
-            fi
-            
-            git commit -m "$commit_msg"
-            
-            # Retry push with pull in case of conflicts
-            for i in {1..3}; do
-              if git push origin main; then
-                echo "✅ 已成功提交并推送adguardhome更改: $commit_msg"
-                break
-              else
-                echo "Push failed, attempt $i/3. Pulling and retrying..."
-                git pull origin main --rebase
-                if [ $i -eq 3 ]; then
-                  echo "❌ Failed to push after 3 attempts"
-                  exit 1
-                fi
-              fi
-            done
-          else
-            echo "没有检测到adguardhome相关文件变更"
-          fi
-
-  # 自动提交v2raya包的更新
+  # 自动提交其他所有包的更新
   job_auto_update_packages:
     if: ${{ always() }}
-    needs: [job_init, job_auto_update_alist, job_auto_update_adguardhome]
+    needs: job_init
     runs-on: ubuntu-latest
     name: update-${{ matrix.pakcages }} 
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [v2raya,v2raya-web]
+        pakcages: [adguardhome,adguardhome-frontend,v2raya,v2raya-web]
         include:
+          - pakcages: adguardhome
+            folder: adguardhome
+            version_line: 9
+            hash_line: 14
+            version_head: PKG_VERSION:=
+            hash_head: \PKG_HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v
+            file_name: 
+
+          - pakcages: adguardhome-frontend
+            folder: adguardhome
+            version_line: 9
+            hash_line: 61
+            version_head: PKG_VERSION:=
+            hash_head: \        HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://github.com/AdguardTeam/AdGuardHome/releases/download/v
+            file_name: /AdGuardHome_frontend.tar.gz
+
           - pakcages: v2raya
             folder: v2raya
             version_line: 8
@@ -283,14 +170,14 @@ jobs:
             hash_head: \PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/v2rayA/v2rayA/tar.gz/v
-            file_name: 	
+            file_name:     
 
           - pakcages: v2raya-web
             folder: v2raya
             version_line: 8
             hash_line: 63
             version_head: PKG_VERSION:=
-            hash_head: \	HASH:=
+            hash_head: \    HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://github.com/v2rayA/v2rayA/releases/download/v
             file_name: /web.tar.gz
@@ -367,29 +254,13 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           
-          # Pull latest changes first to avoid conflicts
-          git pull origin main
-          
           # 检查是否有变更
           if [ -n "$(git status --porcelain)" ]; then
             echo "检测到${{ matrix.pakcages }}文件变更，准备提交..."
             git add ${{ matrix.folder }}/Makefile
             git commit -m "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
-            
-            # Retry push with pull in case of conflicts
-            for i in {1..3}; do
-              if git push origin main; then
-                echo "✅ 已成功提交并推送 ${{ matrix.pakcages }} 更改到版本 ${{ steps.update.outputs.version }}"
-                break
-              else
-                echo "Push failed for ${{ matrix.pakcages }}, attempt $i/3. Pulling and retrying..."
-                git pull origin main --rebase
-                if [ $i -eq 3 ]; then
-                  echo "❌ Failed to push ${{ matrix.pakcages }} after 3 attempts"
-                  exit 1
-                fi
-              fi
-            done
+            git push origin main
+            echo "✅ 已成功提交并推送 ${{ matrix.pakcages }} 更改到版本 ${{ steps.update.outputs.version }}"
           else
             echo "没有检测到${{ matrix.pakcages }}文件变更"
           fi
