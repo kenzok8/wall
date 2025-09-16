@@ -49,9 +49,7 @@ jobs:
         run: |
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
-          # 安装 zstd 工具用于创建 .tar.zst 压缩包
-          sudo apt-get update
-          sudo apt-get install -y zstd
+          sudo apt-get update && sudo apt-get install -y zstd
 
       - name: Check gn version
         id: check
@@ -90,11 +88,9 @@ jobs:
           sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$New_PKG_DATE" Makefile
           cd ~/pack && mkdir -p gn && cd gn
           echo "📦 正在克隆gn仓库..."
-          
           git clone https://gn.googlesource.com/gn.git gn-source
           cd gn-source
           git checkout $New_PKG_VERSION
-
           echo "🔢 计算 commit position..."
           COMMIT_POSITION=$(git rev-list --count HEAD)
           echo "✅ Commit Position: $COMMIT_POSITION"
@@ -119,8 +115,9 @@ jobs:
             sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM $COMMIT_POSITION/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
             SHORT_COMMIT=${New_PKG_VERSION:0:12}
             sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" 
-
+            
+            echo "更新后文件内容:"
+            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
             if grep -q "LAST_COMMIT_POSITION_NUM $COMMIT_POSITION" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"; then
               echo "✅ LAST_COMMIT_POSITION_NUM 更新成功: $COMMIT_POSITION"
             else
@@ -159,7 +156,7 @@ jobs:
             echo "📝 检测到gn文件变更，准备提交..."
             git add gn/Makefile
             git add gn/src/out/last_commit_position.h
-            COMMIT_MSG="gn: update to ${{ steps.update.outputs.short_version }} (cr-pos-${{ steps.update.outputs.commit_position }})"   
+            COMMIT_MSG="gn: update to ${{ steps.update.outputs.short_version }}"
             echo "提交信息: $COMMIT_MSG"
             git commit -m "$COMMIT_MSG"
             git push origin main
