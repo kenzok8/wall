@@ -49,7 +49,7 @@ jobs:
         run: |
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
-          sudo apt-get update && sudo apt-get install -y zstd
+          sudo apt-get update && sudo apt-get install -y zstd git tar
 
       - name: Check gn version
         id: check
@@ -59,108 +59,53 @@ jobs:
           Old_PKG_DATE=$(sed -n '/^PKG_SOURCE_DATE:=/p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
           New_PKG_DATE=$(date +%Y-%m-%d)
-          
-          echo "gn当前版本: ${Old_PKG_VERSION:0:8}..."
-          echo "gn最新版本: ${New_PKG_VERSION:0:8}..."
-          echo "gn当前日期: $Old_PKG_DATE"
-          echo "gn最新日期: $New_PKG_DATE"
-          
+
+          echo "当前版本: ${Old_PKG_VERSION:0:8} 日期: $Old_PKG_DATE"
+          echo "最新版本: ${New_PKG_VERSION:0:8} 日期: $New_PKG_DATE"
+
           if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then
             echo "status=failure" >> $GITHUB_OUTPUT
-            echo "gn版本为最新版本,无需更新"
+            echo "gn 版本未变化，无需更新"
           else
             echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT
             echo "New_PKG_DATE=$New_PKG_DATE" >> $GITHUB_OUTPUT
             echo "status=success" >> $GITHUB_OUTPUT
-            echo "发现gn新版本: ${New_PKG_VERSION:0:8}..."
           fi
 
-      - name: Update gn
-        id: update
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+      - name: Update gn & Calculate Hash
+        if: steps.check.outputs.status == 'success'
         run: |
-          cd $GITHUB_WORKSPACE/gn
-          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          New_PKG_DATE=${{ steps.check.outputs.New_PKG_DATE }}
-          
-          echo "🚀 更新gn到版本: ${New_PKG_VERSION:0:8}..."
-          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=$New_PKG_VERSION" Makefile
-          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$New_PKG_DATE" Makefile
-          cd ~/pack && mkdir -p gn && cd gn
-          echo "📦 正在克隆gn仓库..."
-          git clone https://gn.googlesource.com/gn.git gn-source
-          cd gn-source
-          git checkout $New_PKG_VERSION
-          echo "🔢 计算 commit position..."
-          COMMIT_POSITION=$(git rev-list --count HEAD)
-          echo "✅ Commit Position: $COMMIT_POSITION"
-
-          rm -rf .git
+          cd ~/pack
+          # 克隆指定 commit
+          git clone https://gn.googlesource.com/gn.git gn-src
+          cd gn-src
+          git checkout ${{ steps.check.outputs.New_PKG_VERSION }}
           cd ..
-          echo "📦 创建 .tar.zst 压缩包..."
-          tar -cf - gn-source/ | zstd -19 -T0 > gn-source.tar.zst
-          PKG_HASH=$(sha256sum gn-source.tar.zst | awk '{print $1}')
-          echo "✅ 生成的哈希值: $PKG_HASH"
-          
-          cd $GITHUB_WORKSPACE/gn
-          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$PKG_HASH" Makefile
-          
-          # 🎯 更新 last_commit_position.h 文件
-          COMMIT_POSITION_FILE="gn/src/out/last_commit_position.h"
-          echo "📝 更新 commit position 文件: $COMMIT_POSITION_FILE"
-          
-          if [ -f "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" ]; then
-            echo "当前文件内容:"
-            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM $COMMIT_POSITION/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            SHORT_COMMIT=${New_PKG_VERSION:0:12}
-            sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            
-            echo "更新后文件内容:"
-            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            if grep -q "LAST_COMMIT_POSITION_NUM $COMMIT_POSITION" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"; then
-              echo "✅ LAST_COMMIT_POSITION_NUM 更新成功: $COMMIT_POSITION"
-            else
-              echo "❌ LAST_COMMIT_POSITION_NUM 更新失败"
-            fi
-            
-            if grep -q "LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"; then
-              echo "✅ LAST_COMMIT_POSITION 更新成功: $COMMIT_POSITION ($SHORT_COMMIT)"
-            else
-              echo "❌ LAST_COMMIT_POSITION 更新失败"
-            fi
-          else
-            echo "⚠️ 警告: 文件不存在: $COMMIT_POSITION_FILE"
-            echo "搜索可能的位置..."
-            find "$GITHUB_WORKSPACE" -name "last_commit_position.h" -type f || echo "未找到文件"
-          fi
-          
-          echo "📊 更新总结:"
-          echo "- 版本: ${New_PKG_VERSION:0:8}...${New_PKG_VERSION:32}"
-          echo "- 日期: $New_PKG_DATE"
-          echo "- Hash: $PKG_HASH"
-          echo "- Commit Position: $COMMIT_POSITION"
-          echo "✅ GN 更新完成!"
-          
-          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-          echo "short_version=${New_PKG_VERSION:0:8}" >> $GITHUB_OUTPUT
-          echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
 
-      - name: Commit and Push gn Changes
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+          # 打包成 .tar.zst
+          TARFILE=gn-${{ steps.check.outputs.New_PKG_DATE }}~${{ steps.check.outputs.New_PKG_VERSION:0:8 }}.tar.zst
+          tar --zstd -cf $TARFILE gn-src
+
+          # 计算 sha256
+          HASH=$(sha256sum $TARFILE | awk '{print $1}')
+          echo "计算得到新 HASH: $HASH"
+
+          # 更新 Makefile
+          cd $GITHUB_WORKSPACE/gn
+          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=${{ steps.check.outputs.New_PKG_VERSION }}" Makefile
+          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.check.outputs.New_PKG_DATE }}" Makefile
+          if grep -q "^PKG_MIRROR_HASH:=" Makefile; then
+            sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$HASH" Makefile
+          else
+            echo "PKG_MIRROR_HASH:=$HASH" >> Makefile
+          fi
+
+      - name: Commit & Push
+        if: steps.check.outputs.status == 'success'
         run: |
           cd $GITHUB_WORKSPACE
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "📝 检测到gn文件变更，准备提交..."
-            git add gn/Makefile
-            git add gn/src/out/last_commit_position.h
-            COMMIT_MSG="gn: update to ${{ steps.update.outputs.short_version }}"
-            echo "提交信息: $COMMIT_MSG"
-            git commit -m "$COMMIT_MSG"
-            git push origin main
-            echo "✅ 已成功提交并推送gn更改: $COMMIT_MSG"
-          else
-            echo "没有检测到gn文件变更"
-          fi
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add gn/Makefile
+          git commit -m "gn: update to ${{ steps.check.outputs.New_PKG_VERSION:0:8 }}"
+          git push
