@@ -49,6 +49,9 @@ jobs:
         run: |
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
+          # 安装 zstd 工具用于创建 .tar.zst 压缩包
+          sudo apt-get update
+          sudo apt-get install -y zstd
 
       - name: Check gn version
         id: check
@@ -88,20 +91,21 @@ jobs:
           cd ~/pack && mkdir -p gn && cd gn
           echo "📦 正在克隆gn仓库..."
           
-          # 克隆完整历史记录以准确计算 commit position
           git clone https://gn.googlesource.com/gn.git gn-source
           cd gn-source
           git checkout $New_PKG_VERSION
-          
-          # 🎯 关键修复：使用 git rev-list 准确计算 commit position
+
           echo "🔢 计算 commit position..."
           COMMIT_POSITION=$(git rev-list --count HEAD)
           echo "✅ Commit Position: $COMMIT_POSITION"
 
           rm -rf .git
           cd ..
-          tar -cJf gn-source.tar.xz gn-source/
-          PKG_HASH=$(sha256sum gn-source.tar.xz | awk '{print $1}')
+          echo "📦 创建 .tar.zst 压缩包..."
+          tar -cf - gn-source/ | zstd -19 -T0 > gn-source.tar.zst
+          PKG_HASH=$(sha256sum gn-source.tar.zst | awk '{print $1}')
+          echo "✅ 生成的哈希值: $PKG_HASH"
+          
           cd $GITHUB_WORKSPACE/gn
           sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$PKG_HASH" Makefile
           
@@ -112,18 +116,11 @@ jobs:
           if [ -f "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" ]; then
             echo "当前文件内容:"
             head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            
-            # 更新第6行 LAST_COMMIT_POSITION_NUM
             sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM $COMMIT_POSITION/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            
-            # 更新第7行 LAST_COMMIT_POSITION 
             SHORT_COMMIT=${New_PKG_VERSION:0:12}
             sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"$COMMIT_POSITION ($SHORT_COMMIT)\"/" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            
-            echo "更新后文件内容:"
-            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"
-            
-            # 验证更新
+            head -n 10 "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE" 
+
             if grep -q "LAST_COMMIT_POSITION_NUM $COMMIT_POSITION" "$GITHUB_WORKSPACE/$COMMIT_POSITION_FILE"; then
               echo "✅ LAST_COMMIT_POSITION_NUM 更新成功: $COMMIT_POSITION"
             else
@@ -136,7 +133,7 @@ jobs:
               echo "❌ LAST_COMMIT_POSITION 更新失败"
             fi
           else
-            echo "⚠️  警告: 文件不存在: $COMMIT_POSITION_FILE"
+            echo "⚠️ 警告: 文件不存在: $COMMIT_POSITION_FILE"
             echo "搜索可能的位置..."
             find "$GITHUB_WORKSPACE" -name "last_commit_position.h" -type f || echo "未找到文件"
           fi
@@ -158,18 +155,11 @@ jobs:
           cd $GITHUB_WORKSPACE
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          
-          # 检查是否有变更
           if [ -n "$(git status --porcelain)" ]; then
             echo "📝 检测到gn文件变更，准备提交..."
-            
-            # 添加所有相关文件
             git add gn/Makefile
             git add gn/src/out/last_commit_position.h
-            
-            # 生成提交信息
-            COMMIT_MSG="gn: update to ${{ steps.update.outputs.short_version }} (cr-pos-${{ steps.update.outputs.commit_position }})"
-            
+            COMMIT_MSG="gn: update to ${{ steps.update.outputs.short_version }} (cr-pos-${{ steps.update.outputs.commit_position }})"   
             echo "提交信息: $COMMIT_MSG"
             git commit -m "$COMMIT_MSG"
             git push origin main
@@ -177,4 +167,3 @@ jobs:
           else
             echo "没有检测到gn文件变更"
           fi
-
