@@ -59,38 +59,36 @@ jobs:
           Old_PKG_DATE=$(sed -n '/^PKG_SOURCE_DATE:=/p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
           New_PKG_DATE=$(date +%Y-%m-%d)
+          New_PKG_SHORT=${New_PKG_VERSION:0:8}
 
           echo "当前版本: ${Old_PKG_VERSION:0:8} 日期: $Old_PKG_DATE"
-          echo "最新版本: ${New_PKG_VERSION:0:8} 日期: $New_PKG_DATE"
+          echo "最新版本: $New_PKG_SHORT 日期: $New_PKG_DATE"
+
+          echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT
+          echo "New_PKG_DATE=$New_PKG_DATE" >> $GITHUB_OUTPUT
+          echo "New_PKG_SHORT=$New_PKG_SHORT" >> $GITHUB_OUTPUT
 
           if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "gn 版本未变化，无需更新"
+            echo "status=nochange" >> $GITHUB_OUTPUT
           else
-            echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT
-            echo "New_PKG_DATE=$New_PKG_DATE" >> $GITHUB_OUTPUT
-            echo "status=success" >> $GITHUB_OUTPUT
+            echo "status=update" >> $GITHUB_OUTPUT
           fi
 
       - name: Update gn & Calculate Hash
-        if: steps.check.outputs.status == 'success'
+        if: steps.check.outputs.status == 'update'
         run: |
           cd ~/pack
-          # 克隆指定 commit
           git clone https://gn.googlesource.com/gn.git gn-src
           cd gn-src
           git checkout ${{ steps.check.outputs.New_PKG_VERSION }}
           cd ..
 
-          # 打包成 .tar.zst
-          TARFILE=gn-${{ steps.check.outputs.New_PKG_DATE }}~${{ steps.check.outputs.New_PKG_VERSION:0:8 }}.tar.zst
+          TARFILE=gn-${{ steps.check.outputs.New_PKG_DATE }}~${{ steps.check.outputs.New_PKG_SHORT }}.tar.zst
           tar --zstd -cf $TARFILE gn-src
 
-          # 计算 sha256
           HASH=$(sha256sum $TARFILE | awk '{print $1}')
           echo "计算得到新 HASH: $HASH"
 
-          # 更新 Makefile
           cd $GITHUB_WORKSPACE/gn
           sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=${{ steps.check.outputs.New_PKG_VERSION }}" Makefile
           sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.check.outputs.New_PKG_DATE }}" Makefile
@@ -101,11 +99,11 @@ jobs:
           fi
 
       - name: Commit & Push
-        if: steps.check.outputs.status == 'success'
+        if: steps.check.outputs.status == 'update'
         run: |
           cd $GITHUB_WORKSPACE
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add gn/Makefile
-          git commit -m "gn: update to ${{ steps.check.outputs.New_PKG_VERSION:0:8 }}"
+          git commit -m "gn: update to ${{ steps.check.outputs.New_PKG_SHORT }}"
           git push
