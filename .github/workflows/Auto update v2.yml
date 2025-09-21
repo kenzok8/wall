@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [dns2tcp,ddns-go,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
+        pakcages: [dns2tcp,ddns-go,dns2socks-rust,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
         include:
           - pakcages: dns2tcp
             folder: dns2tcp
@@ -61,7 +61,7 @@ jobs:
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/zfl9/dns2tcp/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/zfl9/dns2tcp//tar.gz/v
+            release_download_url: https://codeload.github.com/zfl9/dns2tcp/tar.gz/v
             file_name:
 
           - pakcages: ddns-go
@@ -72,6 +72,16 @@ jobs:
             hash_head: PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/jeessy2/ddns-go/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/jeessy2/ddns-go/tar.gz/v
+            file_name:
+
+          - pakcages: dns2socks-rust
+            folder: dns2socks-rust
+            version_line: 9
+            hash_line: 14
+            version_head: PKG_VERSION:=
+            hash_head: PKG_HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/tun2proxy/dns2socks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/tun2proxy/dns2socks/tar.gz/v
             file_name:
 
           - pakcages: dockerd
