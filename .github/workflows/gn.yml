@@ -37,8 +37,12 @@ jobs:
         run: |
           NEW_VER=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
           NEW_DATE=$(date +%Y-%m-%d)
+          SHORT_VER=${NEW_VER:0:8}
+          LONG_VER=${NEW_VER:0:12}
           echo "new_ver=$NEW_VER" >> $GITHUB_OUTPUT
           echo "new_date=$NEW_DATE" >> $GITHUB_OUTPUT
+          echo "short_ver=$SHORT_VER" >> $GITHUB_OUTPUT
+          echo "long_ver=$LONG_VER" >> $GITHUB_OUTPUT
 
       - name: 判断是否需要更新
         id: need_update
@@ -62,7 +66,7 @@ jobs:
           COMMIT_POSITION=$(git rev-list --count HEAD)
           rm -rf .git
           cd ..
-          TAR_NAME="gn-${{ steps.newver.outputs.new_date }}~${{ steps.newver.outputs.new_ver:0:8 }}.tar.zst"
+          TAR_NAME="gn-${{ steps.newver.outputs.new_date }}~${{ steps.newver.outputs.short_ver }}.tar.zst"
           tar -cf - gn-source/ | zstd -19 -T0 > $TAR_NAME
           PKG_HASH=$(sha256sum $TAR_NAME | awk '{print $1}')
           echo "tar_name=$TAR_NAME" >> $GITHUB_OUTPUT
@@ -88,7 +92,7 @@ jobs:
           COMMIT_POSITION_FILE="$GITHUB_WORKSPACE/gn/src/out/last_commit_position.h"
           if [ -f "$COMMIT_POSITION_FILE" ]; then
             sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM ${{ steps.pack.outputs.commit_position }}/" "$COMMIT_POSITION_FILE"
-            sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"${{ steps.pack.outputs.commit_position }} (${{ steps.newver.outputs.new_ver:0:12 }})\"/" "$COMMIT_POSITION_FILE"
+            sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"${{ steps.pack.outputs.commit_position }} (${{ steps.newver.outputs.long_ver }})\"/" "$COMMIT_POSITION_FILE"
           fi
 
       - name: Commit and Push gn Changes
@@ -99,7 +103,7 @@ jobs:
           git config --local user.name "GitHub Actions"
           git add gn/Makefile
           git add gn/src/out/last_commit_position.h || true
-          COMMIT_MSG="gn: auto update to ${{ steps.newver.outputs.new_ver:0:8 }}"
+          COMMIT_MSG="gn: auto update to ${{ steps.newver.outputs.short_ver }}"
           git commit -m "$COMMIT_MSG"
           git push origin main
           echo "✅ 已成功提交并推送 gn 更改: $COMMIT_MSG"
@@ -107,7 +111,7 @@ jobs:
       - name: 输出更新日志
         if: steps.need_update.outputs.need == 'true'
         run: |
-          echo "GN已更新:"
+          echo "GN已自动更新:"
           echo "新版本: ${{ steps.newver.outputs.new_ver }}"
           echo "日期: ${{ steps.newver.outputs.new_date }}"
           echo "hash: ${{ steps.pack.outputs.pkg_hash }}"
