@@ -54,9 +54,55 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/shadowsocks-rust
           
-          # 检查版本
+          # 检查版本 - 增加错误处理和调试信息
           Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//')
+          
+          echo "获取shadowsocks-rust最新版本..."
+          
+          # 首先检查API响应
+          api_response=$(curl -sL "https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases")
+          echo "API响应前200字符: $(echo "$api_response" | head -c 200)"
+          
+          # 检查是否是有效的JSON
+          if ! echo "$api_response" | jq . >/dev/null 2>&1; then
+            echo "❌ API返回的不是有效的JSON格式"
+            echo "完整响应: $api_response"
+            exit 1
+          fi
+          
+          # 检查是否是数组
+          if ! echo "$api_response" | jq 'type' | grep -q "array"; then
+            echo "❌ API返回的不是数组格式"
+            echo "返回类型: $(echo "$api_response" | jq 'type')"
+            exit 1
+          fi
+          
+          # 获取最新版本，增加更多调试信息
+          New_PKG_VERSION=$(echo "$api_response" | jq -r '
+            if type == "array" and length > 0 then
+              map(select(has("prerelease") and .prerelease == false)) |
+              if length > 0 then
+                .[0].tag_name | sub("^v"; "")
+              else
+                error("没有找到非预发布版本")
+              end
+            else
+              error("API返回空数组或非数组")
+            end
+          ')
+          
+          # 检查jq命令是否成功
+          if [ $? -ne 0 ] || [ -z "$New_PKG_VERSION" ]; then
+            echo "❌ 无法解析版本信息，尝试备用方法..."
+            # 备用方法：获取第一个release的tag_name
+            New_PKG_VERSION=$(echo "$api_response" | jq -r '.[0].tag_name // empty' | sed 's/^v//')
+            
+            if [ -z "$New_PKG_VERSION" ]; then
+              echo "❌ 备用方法也失败了，退出"
+              exit 1
+            fi
+            echo "✅ 使用备用方法获取到版本: $New_PKG_VERSION"
+          fi
           
           echo "shadowsocks-rust当前版本: $Old_PKG_VERSION"
           echo "shadowsocks-rust最新版本: $New_PKG_VERSION"
@@ -74,29 +120,46 @@ jobs:
             
             # 定义架构信息：行号、缩进、下载URL、文件名
             declare -A arch_info=(
-              # 格式: "hash_line:indent:base_url:filename"
-              [24]="2:https://github.com/shadowsocks/shadowsocks-rust/releases/download/v:shadowsocks-v$New_PKG_VERSION.aarch64-unknown-linux-musl.tar.xz"
-              [30]="4:https://github.com/shadowsocks/shadowsocks-rust/releases/download/v:shadowsocks-v$New_PKG_VERSION.arm-unknown-linux-musleabi.tar.xz"
-              [33]="4:https://github.com/shadowsocks/shadowsocks-rust/releases/download/v:shadowsocks-v$New_PKG_VERSION.arm-unknown-linux-musleabihf.tar.xz"
-              [37]="2:https://github.com/shadowsocks/shadowsocks-rust/releases/download/v:shadowsocks-v$New_PKG_VERSION.i686-unknown-linux-musl.tar.xz"
-              [40]="2:https://github.com/shadowsocks/shadowsocks-rust/releases/download/v:shadowsocks-v$New_PKG_VERSION.x86_64-unknown-linux-musl.tar.xz"
-              [43]="2:https://github.com/sbwml/shadowsocks-rust-mips/releases/download/v:shadowsocks-v$New_PKG_VERSION.mips-unknown-linux-musl.tar.xz"
-              [46]="2:https://github.com/sbwml/shadowsocks-rust-mips/releases/download/v:shadowsocks-v$New_PKG_VERSION.mipsel-unknown-linux-musl.tar.xz"
+              # 格式: "hash_line:indent:repo_owner:filename"
+              [24]="2:shadowsocks:shadowsocks-v$New_PKG_VERSION.aarch64-unknown-linux-musl.tar.xz"
+              [30]="4:shadowsocks:shadowsocks-v$New_PKG_VERSION.arm-unknown-linux-musleabi.tar.xz"
+              [33]="4:shadowsocks:shadowsocks-v$New_PKG_VERSION.arm-unknown-linux-musleabihf.tar.xz"
+              [37]="2:shadowsocks:shadowsocks-v$New_PKG_VERSION.i686-unknown-linux-musl.tar.xz"
+              [40]="2:shadowsocks:shadowsocks-v$New_PKG_VERSION.x86_64-unknown-linux-musl.tar.xz"
+              [43]="2:sbwml:shadowsocks-v$New_PKG_VERSION.mips-unknown-linux-musl.tar.xz"
+              [46]="2:sbwml:shadowsocks-v$New_PKG_VERSION.mipsel-unknown-linux-musl.tar.xz"
             )
             
             # 处理每个架构
             for hash_line in "${!arch_info[@]}"; do
               info="${arch_info[$hash_line]}"
-              IFS=':' read -r indent base_url filename <<< "$info"
+              IFS=':' read -r indent repo_owner filename <<< "$info"
               
               echo "处理架构文件: $filename (行号: $hash_line, 缩进: ${indent}空格)"
               
-              # 下载文件
-              download_url="${base_url}${New_PKG_VERSION}/${filename}"
-              echo "下载URL: $download_url"
-              wget -q "$download_url"
+              # 构建下载URL
+              if [ "$repo_owner" = "shadowsocks" ]; then
+                download_url="https://github.com/shadowsocks/shadowsocks-rust/releases/download/v${New_PKG_VERSION}/${filename}"
+              elif [ "$repo_owner" = "sbwml" ]; then
+                download_url="https://github.com/sbwml/shadowsocks-rust-mips/releases/download/v${New_PKG_VERSION}/${filename}"
+              fi
               
-              if [ -f "$filename" ]; then
+              echo "下载URL: $download_url"
+              
+              # 下载文件，增加重试机制
+              download_success=false
+              for attempt in 1 2 3; do
+                echo "尝试下载 $filename (第${attempt}次)"
+                if wget -q "$download_url"; then
+                  download_success=true
+                  break
+                else
+                  echo "下载失败，等待5秒后重试..."
+                  sleep 5
+                fi
+              done
+              
+              if [ "$download_success" = true ] && [ -f "$filename" ]; then
                 # 计算哈希
                 PKG_HASH=$(sha256sum "$filename" | awk '{print $1}')
                 echo "$filename 哈希值: $PKG_HASH"
@@ -111,7 +174,9 @@ jobs:
                 
                 cd ~/pack/shadowsocks-rust
               else
-                echo "警告: 无法下载文件 $filename"
+                echo "❌ 警告: 无法下载文件 $filename，跳过此架构"
+                # 可以选择继续处理其他架构，或者退出
+                # exit 1  # 如果希望任何一个文件下载失败就退出，取消注释这行
               fi
             done
             
