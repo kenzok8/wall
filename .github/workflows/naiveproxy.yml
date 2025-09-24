@@ -193,9 +193,10 @@ jobs:
                 PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
                 echo "$file_name 哈希值: $PKG_HASH"
                 
-                # 更新对应行的哈希 (所有架构都使用2个空格缩进)
+                # 修复：使用正确的sed命令更新哈希行（2个空格缩进）
                 cd $GITHUB_WORKSPACE/naiveproxy
-                sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
+                # 使用替换模式而不是整行替换，保持正确的缩进格式
+                sed -i "${hash_line}s/^  PKG_HASH:=.*$/  PKG_HASH:=$PKG_HASH/" Makefile
                 
                 cd ~/pack/naiveproxy
               else
