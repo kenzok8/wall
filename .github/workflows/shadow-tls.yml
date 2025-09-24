@@ -1,145 +1,208 @@
-name: "shadow-tls"
+name: “shadow-tls”
 on:
-  repository_dispatch:
-  workflow_dispatch:
-    inputs:
-      ssh:
-        description: 'SSH connection to Actions'
-        required: false
-        default: 'false'
-  schedule:
-    - cron: "0 */8 * * *"
+repository_dispatch:
+workflow_dispatch:
+inputs:
+ssh:
+description: ‘SSH connection to Actions’
+required: false
+default: ‘false’
+schedule:
+- cron: “0 */8 * * *”
 env:
-  TZ: Asia/Shanghai
+TZ: Asia/Shanghai
 
 jobs:
-  job_init:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
+job_init:
+runs-on: ubuntu-latest
+steps:
+- name: Checkout
+uses: actions/checkout@main
 
-      - name: Initialization environment
-        run: |
-          sudo timedatectl set-timezone "$TZ"
+```
+  - name: Initialization environment
+    run: |
+      sudo timedatectl set-timezone "$TZ"
 
-      - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@main
-        with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 1
-          keep_minimum_runs: 1
+  - name: Delete workflow runs
+    uses: Mattraks/delete-workflow-runs@main
+    with:
+      token: ${{ github.token }}
+      repository: ${{ github.repository }}
+      retain_days: 1
+      keep_minimum_runs: 1
+    
+  - name: SSH connection to Actions
+    uses: kenzok78/ssh-action@master
+    if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+```
+
+# 串行执行所有shadow-tls架构，避免同时修改同一个Makefile
+
+job_auto_update_shadow_tls:
+if: ${{ always() }}
+needs: job_init
+runs-on: ubuntu-latest
+name: update-shadow-tls-all-arch
+steps:
+- name: Checkout
+uses: actions/checkout@main
+
+```
+  - name: Initialization environment
+    run: |
+      cd && mkdir -p pack && cd pack
+      sudo timedatectl set-timezone "$TZ"
+
+  - name: Check version and update all architectures
+    run: |
+      cd $GITHUB_WORKSPACE/shadow-tls
+      
+      # 检查版本 - 增加错误处理和调试信息
+      Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+      
+      echo "获取shadow-tls最新版本..."
+      
+      # 首先检查API响应
+      api_response=$(curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases")
+      echo "API响应前200字符: $(echo "$api_response" | head -c 200)"
+      
+      # 检查是否是有效的JSON
+      if ! echo "$api_response" | jq . >/dev/null 2>&1; then
+        echo "❌ API返回的不是有效的JSON格式"
+        echo "完整响应: $api_response"
+        exit 1
+      fi
+      
+      # 检查是否是数组
+      if ! echo "$api_response" | jq 'type' | grep -q "array"; then
+        echo "❌ API返回的不是数组格式"
+        echo "返回类型: $(echo "$api_response" | jq 'type')"
+        exit 1
+      fi
+      
+      # 获取最新版本，增加更多调试信息
+      New_PKG_VERSION=$(echo "$api_response" | jq -r '
+        if type == "array" and length > 0 then
+          map(select(has("prerelease") and .prerelease == false)) |
+          if length > 0 then
+            .[0].tag_name | sub("^v"; "")
+          else
+            error("没有找到非预发布版本")
+          end
+        else
+          error("API返回空数组或非数组")
+        end
+      ')
+      
+      # 检查jq命令是否成功
+      if [ $? -ne 0 ] || [ -z "$New_PKG_VERSION" ]; then
+        echo "❌ 无法解析版本信息，尝试备用方法..."
+        # 备用方法：获取第一个release的tag_name
+        New_PKG_VERSION=$(echo "$api_response" | jq -r '.[0].tag_name // empty' | sed 's/^v//')
         
-      - name: SSH connection to Actions
-        uses: kenzok78/ssh-action@master
-        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
-
-  # 串行执行所有shadow-tls架构，避免同时修改同一个Makefile
-  job_auto_update_shadow_tls:
-    if: ${{ always() }}
-    needs: job_init
-    runs-on: ubuntu-latest
-    name: update-shadow-tls-all-arch
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
-
-      - name: Initialization environment
-        run: |
-          cd && mkdir -p pack && cd pack
-          sudo timedatectl set-timezone "$TZ"
-
-      - name: Check version and update all architectures
-        run: |
-          cd $GITHUB_WORKSPACE/shadow-tls
+        if [ -z "$New_PKG_VERSION" ]; then
+          echo "❌ 备用方法也失败了，退出"
+          exit 1
+        fi
+        echo "✅ 使用备用方法获取到版本: $New_PKG_VERSION"
+      fi
+      
+      echo "shadow-tls当前版本: $Old_PKG_VERSION"
+      echo "shadow-tls最新版本: $New_PKG_VERSION"
+      
+      if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+        echo "检测到新版本，开始更新所有架构..."
+        
+        # 更新版本号
+        sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
+        echo "SHADOW_TLS_UPDATED=true" >> $GITHUB_ENV
+        echo "SHADOW_TLS_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
+        
+        # 创建下载目录
+        cd ~/pack && mkdir -p shadow-tls && cd shadow-tls
+        
+        # 定义所有架构和对应的哈希行及文件名
+        declare -A arch_files=(
+          [14]="shadow-tls-aarch64-unknown-linux-musl"
+          [18]="shadow-tls-armv7-unknown-linux-musleabihf"
+          [21]="shadow-tls-armv7-unknown-linux-musleabihf"
+          [24]="shadow-tls-arm-unknown-linux-musleabi"
+          [28]="shadow-tls-x86_64-unknown-linux-musl"
+        )
+        
+        # 定义缩进格式
+        declare -A indent_spaces=(
+          [14]=4  # aarch64: 4空格
+          [18]=8  # armv7-musleabihf: 8空格
+          [21]=8  # armv7-musleabihf (重复): 8空格
+          [24]=8  # arm-musleabi: 8空格
+          [28]=4  # x86_64: 4空格
+        )
+        
+        # 下载所有文件并计算哈希
+        for hash_line in "${!arch_files[@]}"; do
+          file_name="${arch_files[$hash_line]}"
+          spaces="${indent_spaces[$hash_line]}"
+          echo "处理架构文件: $file_name (行号: $hash_line, 缩进: ${spaces}空格)"
           
-          # 检查版本
-          Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/ihciah/shadow-tls/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//')
+          # 下载文件，增加重试机制
+          download_success=false
+          for attempt in 1 2 3; do
+            echo "尝试下载 $file_name (第${attempt}次)"
+            if wget -q "https://github.com/ihciah/shadow-tls/releases/download/v$New_PKG_VERSION/$file_name"; then
+              download_success=true
+              break
+            else
+              echo "下载失败，等待5秒后重试..."
+              sleep 5
+            fi
+          done
           
-          echo "shadow-tls当前版本: $Old_PKG_VERSION"
-          echo "shadow-tls最新版本: $New_PKG_VERSION"
-          
-          if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
-            echo "检测到新版本，开始更新所有架构..."
+          if [ "$download_success" = true ] && [ -f "$file_name" ]; then
+            # 计算哈希
+            PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
+            echo "$file_name 哈希值: $PKG_HASH"
             
-            # 更新版本号
-            sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
-            echo "SHADOW_TLS_UPDATED=true" >> $GITHUB_ENV
-            echo "SHADOW_TLS_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
+            # 根据缩进格式更新哈希
+            cd $GITHUB_WORKSPACE/shadow-tls
+            if [ "$spaces" = "4" ]; then
+              sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
+            elif [ "$spaces" = "8" ]; then
+              sed -i "${hash_line}c\        PKG_HASH:=$PKG_HASH" Makefile
+            fi
             
-            # 创建下载目录
-            cd ~/pack && mkdir -p shadow-tls && cd shadow-tls
-            
-            # 定义所有架构和对应的哈希行及文件名
-            declare -A arch_files=(
-              [14]="shadow-tls-aarch64-unknown-linux-musl"
-              [18]="shadow-tls-armv7-unknown-linux-musleabihf"
-              [21]="shadow-tls-armv7-unknown-linux-musleabihf"
-              [24]="shadow-tls-arm-unknown-linux-musleabi"
-              [28]="shadow-tls-x86_64-unknown-linux-musl"
-            )
-            
-            # 定义缩进格式
-            declare -A indent_spaces=(
-              [14]=4  # aarch64: 4空格
-              [18]=8  # armv7-musleabihf: 8空格
-              [21]=8  # armv7-musleabihf (重复): 8空格
-              [24]=8  # arm-musleabi: 8空格
-              [28]=4  # x86_64: 4空格
-            )
-            
-            # 下载所有文件并计算哈希
-            for hash_line in "${!arch_files[@]}"; do
-              file_name="${arch_files[$hash_line]}"
-              spaces="${indent_spaces[$hash_line]}"
-              echo "处理架构文件: $file_name (行号: $hash_line, 缩进: ${spaces}空格)"
-              
-              # 下载文件
-              wget -q "https://github.com/ihciah/shadow-tls/releases/download/v$New_PKG_VERSION/$file_name"
-              
-              if [ -f "$file_name" ]; then
-                # 计算哈希
-                PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
-                echo "$file_name 哈希值: $PKG_HASH"
-                
-                # 根据缩进格式更新哈希
-                cd $GITHUB_WORKSPACE/shadow-tls
-                if [ "$spaces" = "4" ]; then
-                  sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
-                elif [ "$spaces" = "8" ]; then
-                  sed -i "${hash_line}c\        PKG_HASH:=$PKG_HASH" Makefile
-                fi
-                
-                cd ~/pack/shadow-tls
-              else
-                echo "警告: 无法下载文件 $file_name"
-              fi
-            done
-            
-            echo "所有架构文件哈希更新完成"
+            cd ~/pack/shadow-tls
           else
-            echo "shadow-tls版本为最新版本,无需更新"
-            echo "SHADOW_TLS_UPDATED=false" >> $GITHUB_ENV
+            echo "❌ 警告: 无法下载文件 $file_name，跳过此架构"
+            # 可以选择继续处理其他架构，或者退出
+            # exit 1  # 如果希望任何一个文件下载失败就退出，取消注释这行
           fi
+        done
+        
+        echo "所有架构文件哈希更新完成"
+      else
+        echo "shadow-tls版本为最新版本,无需更新"
+        echo "SHADOW_TLS_UPDATED=false" >> $GITHUB_ENV
+      fi
 
-      - name: Commit and Push shadow-tls Changes
-        if: env.SHADOW_TLS_UPDATED == 'true'
-        run: |
-          cd $GITHUB_WORKSPACE
-          
-          # 配置git
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          
-          # 检查是否有变更
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "检测到shadow-tls文件变更，准备提交..."
-            git add shadow-tls/Makefile
-            git commit -m "shadow-tls: update to $SHADOW_TLS_VERSION"
-            git push origin main
-            echo "✅ 已成功提交并推送 shadow-tls 更改到版本 $SHADOW_TLS_VERSION"
-          else
-            echo "没有检测到shadow-tls文件变更"
-          fi
+  - name: Commit and Push shadow-tls Changes
+    if: env.SHADOW_TLS_UPDATED == 'true'
+    run: |
+      cd $GITHUB_WORKSPACE
+      
+      # 配置git
+      git config --local user.email "actions@github.com"
+      git config --local user.name "GitHub Actions"
+      
+      # 检查是否有变更
+      if [ -n "$(git status --porcelain)" ]; then
+        echo "检测到shadow-tls文件变更，准备提交..."
+        git add shadow-tls/Makefile
+        git commit -m "shadow-tls: update to $SHADOW_TLS_VERSION"
+        git push origin main
+        echo "✅ 已成功提交并推送 shadow-tls 更改到版本 $SHADOW_TLS_VERSION"
+      else
+        echo "没有检测到shadow-tls文件变更"
+      fi
+```
