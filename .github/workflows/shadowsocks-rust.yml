@@ -54,54 +54,44 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/shadowsocks-rust
           
-          # 检查版本 - 增加错误处理和调试信息
+          # 检查当前版本
           Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
           
           echo "获取shadowsocks-rust最新版本..."
           
-          # 首先检查API响应
-          api_response=$(curl -sL "https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases")
-          echo "API响应前200字符: $(echo "$api_response" | head -c 200)"
+          # 使用GitHub API获取最新版本
+          api_response=$(curl -H "Authorization: Bearer ${{ github.token }}" -s \
+            "https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases")
           
-          # 检查是否是有效的JSON
-          if ! echo "$api_response" | jq . >/dev/null 2>&1; then
-            echo "❌ API返回的不是有效的JSON格式"
-            echo "完整响应: $api_response"
-            exit 1
-          fi
-          
-          # 检查是否是数组
-          if ! echo "$api_response" | jq 'type' | grep -q "array"; then
-            echo "❌ API返回的不是数组格式"
-            echo "返回类型: $(echo "$api_response" | jq 'type')"
-            exit 1
-          fi
-          
-          # 获取最新版本，增加更多调试信息
-          New_PKG_VERSION=$(echo "$api_response" | jq -r '
-            if type == "array" and length > 0 then
-              map(select(has("prerelease") and .prerelease == false)) |
-              if length > 0 then
-                .[0].tag_name | sub("^v"; "")
-              else
-                error("没有找到非预发布版本")
-              end
-            else
-              error("API返回空数组或非数组")
-            end
-          ')
-          
-          # 检查jq命令是否成功
-          if [ $? -ne 0 ] || [ -z "$New_PKG_VERSION" ]; then
-            echo "❌ 无法解析版本信息，尝试备用方法..."
-            # 备用方法：获取第一个release的tag_name
-            New_PKG_VERSION=$(echo "$api_response" | jq -r '.[0].tag_name // empty' | sed 's/^v//')
+          # 检查API错误
+          if echo "$api_response" | jq -e '.message' >/dev/null 2>&1; then
+            error_msg=$(echo "$api_response" | jq -r '.message')
+            echo "❌ GitHub API错误: $error_msg"
             
+            # 使用备用方法获取版本
+            echo "尝试备用方法获取版本..."
+            New_PKG_VERSION=$(git ls-remote --tags --refs --sort="version:refname" \
+              https://github.com/shadowsocks/shadowsocks-rust.git | \
+              grep -v '\^{}$' | \
+              tail -1 | \
+              sed 's/.*refs\/tags\/v//')
+              
             if [ -z "$New_PKG_VERSION" ]; then
               echo "❌ 备用方法也失败了，退出"
               exit 1
             fi
             echo "✅ 使用备用方法获取到版本: $New_PKG_VERSION"
+          else
+            # 正常解析API响应
+            New_PKG_VERSION=$(echo "$api_response" | jq -r '
+              map(select(.prerelease == false)) |
+              if length > 0 then .[0].tag_name | sub("^v"; "") else empty end
+            ')
+            
+            if [ -z "$New_PKG_VERSION" ]; then
+              echo "❌ 无法解析版本信息"
+              exit 1
+            fi
           fi
           
           echo "shadowsocks-rust当前版本: $Old_PKG_VERSION"
@@ -135,7 +125,7 @@ jobs:
               info="${arch_info[$hash_line]}"
               IFS=':' read -r indent repo_owner filename <<< "$info"
               
-              echo "处理架构文件: $filename (行号: $hash_line, 缩进: ${indent}空格)"
+              echo "处理架构文件: $filename (行号: $hash_line)"
               
               # 构建下载URL
               if [ "$repo_owner" = "shadowsocks" ]; then
@@ -146,41 +136,32 @@ jobs:
               
               echo "下载URL: $download_url"
               
-              # 下载文件，增加重试机制
-              download_success=false
-              for attempt in 1 2 3; do
-                echo "尝试下载 $filename (第${attempt}次)"
-                if wget -q "$download_url"; then
-                  download_success=true
-                  break
+              # 下载文件
+              if wget -q --timeout=30 "$download_url"; then
+                if [ -f "$filename" ] && [ -s "$filename" ]; then
+                  # 计算哈希
+                  PKG_HASH=$(sha256sum "$filename" | awk '{print $1}')
+                  echo "$filename 哈希值: $PKG_HASH"
+                  
+                  # 根据缩进格式更新哈希
+                  cd $GITHUB_WORKSPACE/shadowsocks-rust
+                  if [ "$indent" = "2" ]; then
+                    sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
+                  elif [ "$indent" = "4" ]; then
+                    sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
+                  fi
+                  
+                  cd ~/pack/shadowsocks-rust
+                  echo "✅ $filename 处理成功"
                 else
-                  echo "下载失败，等待5秒后重试..."
-                  sleep 5
+                  echo "❌ 下载的文件为空或不存在: $filename"
                 fi
-              done
-              
-              if [ "$download_success" = true ] && [ -f "$filename" ]; then
-                # 计算哈希
-                PKG_HASH=$(sha256sum "$filename" | awk '{print $1}')
-                echo "$filename 哈希值: $PKG_HASH"
-                
-                # 根据缩进格式更新哈希
-                cd $GITHUB_WORKSPACE/shadowsocks-rust
-                if [ "$indent" = "2" ]; then
-                  sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
-                elif [ "$indent" = "4" ]; then
-                  sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
-                fi
-                
-                cd ~/pack/shadowsocks-rust
               else
-                echo "❌ 警告: 无法下载文件 $filename，跳过此架构"
-                # 可以选择继续处理其他架构，或者退出
-                # exit 1  # 如果希望任何一个文件下载失败就退出，取消注释这行
+                echo "❌ 下载失败: $filename"
               fi
             done
             
-            echo "所有架构文件哈希更新完成"
+            echo "架构文件哈希更新完成"
           else
             echo "shadowsocks-rust版本为最新版本,无需更新"
             echo "SHADOWSOCKS_UPDATED=false" >> $GITHUB_ENV
