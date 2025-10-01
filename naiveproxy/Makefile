@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=naiveproxy
-PKG_VERSION:=140.0.7339.123-2
+PKG_VERSION:=140.0.7339.123-1
 PKG_RELEASE:=1
 
 # intel 80386 & riscv64 & cortex-a76
