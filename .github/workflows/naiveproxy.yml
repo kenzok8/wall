@@ -57,14 +57,14 @@ jobs:
           # 检查版本 - 增加错误处理和调试信息
           Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
           
-          echo "获取naiveproxy最新版本..."
+          echo "获取naiveproxy最新版本（包括Pre-release）..."
           
           # 使用GitHub token进行认证API请求，避免rate limit
           api_response=$(curl -sL \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ github.token }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/klzgrad/naiveproxy/releases/latest")
+            "https://api.github.com/repos/klzgrad/naiveproxy/releases")
           
           echo "API响应前200字符: $(echo "$api_response" | head -c 200)"
           
@@ -104,15 +104,10 @@ jobs:
             exit 1
           fi
           
-          # 获取最新版本，增加更多调试信息
+          # 获取最新版本（包括Pre-release），增加更多调试信息
           New_PKG_VERSION=$(echo "$api_response" | jq -r '
             if type == "array" and length > 0 then
-              map(select(has("prerelease") and .prerelease == false)) |
-              if length > 0 then
-                .[0].tag_name | sub("^v"; "")
-              else
-                error("没有找到非预发布版本")
-              end
+              .[0].tag_name | sub("^v"; "")
             else
               error("API返回空数组或非数组")
             end
@@ -132,7 +127,7 @@ jobs:
           fi
           
           echo "naiveproxy当前版本: $Old_PKG_VERSION"
-          echo "naiveproxy最新版本: $New_PKG_VERSION"
+          echo "naiveproxy最新版本（含Pre-release）: $New_PKG_VERSION"
           
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
             echo "检测到新版本，开始更新所有架构..."
