@@ -86,7 +86,7 @@ jobs:
             file_name:
 
           - pakcages: docker
-            folder: dockerd
+            folder: docker
             version_line: 4
             hash_line: 9
             version_head: PKG_VERSION:=
