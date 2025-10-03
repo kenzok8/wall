@@ -1,0 +1,195 @@
+name: "Update SourceForge Packages"
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: "0 */12 * * *"  # 每12小时运行一次
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  job_init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 1
+          keep_minimum_runs: 1
+        
+      - name: SSH connection to Actions
+        uses: kenzok78/ssh-action@master
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+
+  # 自动更新SourceForge包
+  job_auto_update_sourceforge:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    name: update-dns2socks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        run: |
+          mkdir -p ~/pack
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Check and Update dns2socks
+        id: check_update
+        run: |
+          cd $GITHUB_WORKSPACE/dns2socks
+          
+          # 使用grep通过变量名读取值（不依赖固定行号）
+          Old_VERSION=$(grep '^PKG_VERSION' Makefile | head -1 | sed 's/^[^:=]*[:=]\s*//' | tr -d ' ')
+          Old_DATE=$(grep '^PKG_SOURCE_DATE' Makefile | head -1 | sed 's/^[^:=]*[:=]\s*//' | tr -d ' ')
+          Old_HASH=$(grep '^PKG_HASH' Makefile | head -1 | sed 's/^[^:=]*[:=]\s*//' | tr -d ' ')
+          
+          echo "?? dns2socks 当前信息:"
+          echo "  版本: $Old_VERSION"
+          echo "  日期: $Old_DATE"
+          echo "  哈希: $Old_HASH"
+          
+          # 尝试从SourceForge API获取最新版本信息
+          echo ""
+          echo "?? 检查SourceForge最新版本..."
+          
+          # SourceForge项目页面
+          PROJECT="dns2socks"
+          
+          # 方法1: 尝试从SourceForge下载最新文件
+          File_URL="https://sourceforge.net/projects/${PROJECT}/files/latest/download"
+          
+          # 下载文件来验证和计算哈希
+          cd ~/pack
+          rm -f SourceCode.zip SourceCode.zip.*
+          
+          echo "??  下载最新文件..."
+          
+          # 使用wget下载，设置超时和重试
+          if wget -t 3 -T 30 -O SourceCode.zip "$File_URL" 2>&1 | tee download.log | grep -E "saved|Length|failed"; then
+            if [ -f "SourceCode.zip" ] && [ -s "SourceCode.zip" ]; then
+              # 计算新哈希
+              New_HASH=$(sha256sum SourceCode.zip | awk '{print $1}')
+              
+              # 获取文件修改日期
+              New_DATE=$(date -r SourceCode.zip +%Y-%m-%d)
+              
+              # 版本号保持不变或尝试从文件中提取
+              New_VERSION="$Old_VERSION"
+              
+              echo ""
+              echo "? 下载成功"
+              echo "  版本: $New_VERSION"
+              echo "  日期: $New_DATE"
+              echo "  哈希: $New_HASH"
+              
+              # 检查是否需要更新
+              NEED_UPDATE=false
+              
+              if [ "$Old_HASH" != "$New_HASH" ]; then
+                echo ""
+                echo "?? 检测到文件哈希变化，需要更新"
+                NEED_UPDATE=true
+              else
+                echo ""
+                echo "??  文件哈希相同，无需更新"
+              fi
+              
+              if [ "$NEED_UPDATE" = "true" ]; then
+                # 更新Makefile - 使用变量名匹配
+                cd $GITHUB_WORKSPACE/dns2socks
+                
+                echo ""
+                echo "??  更新Makefile..."
+                
+                # 更新版本（如果检测到新版本）
+                if [ "$Old_VERSION" != "$New_VERSION" ]; then
+                  sed -i 's|^PKG_VERSION[[:space:]]*[:=].*|PKG_VERSION:='"$New_VERSION"'|' Makefile
+                  echo "  ? PKG_VERSION: $Old_VERSION → $New_VERSION"
+                fi
+                
+                # 更新日期
+                if grep -q '^PKG_SOURCE_DATE' Makefile; then
+                  sed -i 's|^PKG_SOURCE_DATE[[:space:]]*[:=].*|PKG_SOURCE_DATE:='"$New_DATE"'|' Makefile
+                  echo "  ? PKG_SOURCE_DATE: $Old_DATE → $New_DATE"
+                fi
+                
+                # 更新哈希
+                sed -i 's|^PKG_HASH[[:space:]]*[:=].*|PKG_HASH:='"$New_HASH"'|' Makefile
+                echo "  ? PKG_HASH: ${Old_HASH:0:16}... → ${New_HASH:0:16}..."
+                
+                echo "UPDATED=true" >> $GITHUB_ENV
+                echo "NEW_VERSION=$New_VERSION" >> $GITHUB_ENV
+                echo "NEW_DATE=$New_DATE" >> $GITHUB_ENV
+                echo "updated=true" >> $GITHUB_OUTPUT
+              else
+                echo "UPDATED=false" >> $GITHUB_ENV
+                echo "updated=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "? 下载的文件为空或不存在"
+              echo "updated=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "? 下载失败"
+            cat download.log 2>/dev/null || true
+            echo "updated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and Push dns2socks Changes
+        if: steps.check_update.outputs.updated == 'true'
+        run: |
+          cd $GITHUB_WORKSPACE
+          
+          # 配置git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # Pull latest changes first to avoid conflicts
+          git pull origin main
+          
+          # 检查是否有变更
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "?? 检测到 dns2socks 文件变更，准备提交..."
+            git add dns2socks/Makefile
+            git commit -m "dns2socks: update to $NEW_VERSION ($NEW_DATE)"
+            
+            # Retry push with pull in case of conflicts
+            for i in {1..3}; do
+              if git push origin main; then
+                echo "? 已成功提交并推送 dns2socks 更改"
+                break
+              else
+                echo "??  推送失败，尝试 $i/3"
+                git pull origin main --rebase
+                if [ $i -eq 3 ]; then
+                  echo "? 推送失败，已尝试3次"
+                  exit 1
+                fi
+              fi
+            done
+          else
+            echo "??  没有检测到 dns2socks 文件变更"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd ~/pack
+          rm -f SourceCode.zip SourceCode.zip.* download.log

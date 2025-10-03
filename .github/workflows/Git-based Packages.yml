@@ -1,0 +1,233 @@
+name: "Update Git-based Packages"
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: "0 */12 * * *"  # 每12小时运行一次
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  job_init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 1
+          keep_minimum_runs: 1
+        
+      - name: SSH connection to Actions
+        uses: kenzok78/ssh-action@master
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+
+  # 自动更新基于Git源的包
+  job_auto_update_git_packages:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    name: update-${{ matrix.package }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1  # 串行执行，避免同时修改同一个Makefile
+      matrix:
+        package:
+          - ssocks
+          - pdnsd
+          - simple-obfs
+        include:
+          - package: ssocks
+            folder: ssocks
+            git_url: https://github.com/tostercx/ssocks.git
+
+          - package: pdnsda
+            folder: pdnsd
+            git_url: https://github.com/shadowsocks/pdnsd.git
+
+          - package: simple-obfs
+            folder: simple-obfs
+            git_url: https://github.com/shadowsocks/simple-obfs.git
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        run: |
+          mkdir -p ~/pack
+          sudo timedatectl set-timezone "$TZ"
+          sudo apt-get update
+          sudo apt-get install -y git curl
+
+      - name: Check and Update ${{ matrix.package }}
+        id: check_update
+        run: |
+          cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+          
+          echo "?? 正在检查 ${{ matrix.package }} 的Makefile..."
+          
+          # 使用grep和awk通过变量名读取值（不依赖固定行号）
+          Old_DATE=$(grep -E '^PKG_SOURCE_DATE' Makefile | head -1 | awk -F ':?=' '{print $2}' | tr -d ' ')
+          Old_COMMIT=$(grep -E '^PKG_SOURCE_VERSION' Makefile | head -1 | awk -F ':?=' '{print $2}' | tr -d ' ')
+          Old_HASH=$(grep -E '^PKG_MIRROR_HASH' Makefile | head -1 | awk -F ':?=' '{print $2}' | tr -d ' ')
+          
+          # 如果没有PKG_MIRROR_HASH，尝试PKG_HASH
+          if [ -z "$Old_HASH" ]; then
+            Old_HASH=$(grep -E '^PKG_HASH' Makefile | head -1 | awk -F ':?=' '{print $2}' | tr -d ' ')
+            HASH_VAR="PKG_HASH"
+          else
+            HASH_VAR="PKG_MIRROR_HASH"
+          fi
+          
+          echo "?? ${{ matrix.package }} 当前信息:"
+          echo "  日期变量: PKG_SOURCE_DATE=$Old_DATE"
+          echo "  提交变量: PKG_SOURCE_VERSION=$Old_COMMIT"
+          echo "  哈希变量: $HASH_VAR=$Old_HASH"
+          
+          # 克隆仓库获取最新信息
+          cd ~/pack
+          rm -rf ${{ matrix.package }}_check
+          echo ""
+          echo "?? 克隆仓库检查最新提交..."
+          git clone --depth 50 ${{ matrix.git_url }} ${{ matrix.package }}_check
+          cd ${{ matrix.package }}_check
+          
+          # 获取最新提交信息
+          New_COMMIT=$(git rev-parse HEAD)
+          New_DATE=$(git log -1 --format=%cd --date=format:%Y-%m-%d)
+          
+          echo ""
+          echo "? ${{ matrix.package }} 最新信息:"
+          echo "  日期: $New_DATE"
+          echo "  提交: $New_COMMIT"
+          
+          # 检查是否需要更新
+          NEED_UPDATE=false
+          
+          if [ -n "$Old_COMMIT" ] && [ "$Old_COMMIT" != "$New_COMMIT" ]; then
+            echo ""
+            echo "? 检测到新提交，需要更新"
+            NEED_UPDATE=true
+          elif [ -z "$Old_COMMIT" ]; then
+            echo ""
+            echo "??  Makefile中未找到PKG_SOURCE_VERSION，仅通过日期判断"
+            if [ "$Old_DATE" != "$New_DATE" ]; then
+              echo "? 日期已变化，需要更新"
+              NEED_UPDATE=true
+            fi
+          else
+            echo ""
+            echo "??  已是最新版本，无需更新"
+          fi
+          
+          if [ "$NEED_UPDATE" = "true" ]; then
+            echo ""
+            echo "??  开始计算新哈希值..."
+            
+            # 计算新的哈希值
+            cd ~/pack
+            rm -rf ${{ matrix.package }}_hash
+            git clone ${{ matrix.git_url }} ${{ matrix.package }}_hash
+            cd ${{ matrix.package }}_hash
+            git checkout $New_COMMIT
+            
+            # 创建tar.gz并计算哈希
+            cd ~/pack
+            tar -czf ${{ matrix.package }}.tar.gz -C ${{ matrix.package }}_hash .
+            New_HASH=$(sha256sum ${{ matrix.package }}.tar.gz | awk '{print $1}')
+            
+            echo "?? 新哈希值: $New_HASH"
+            
+            # 更新Makefile - 使用sed的变量名匹配而非行号
+            cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+            
+            echo ""
+            echo "??  更新Makefile..."
+            
+            # 更新日期 - 匹配PKG_SOURCE_DATE行并替换
+            if grep -q '^PKG_SOURCE_DATE' Makefile; then
+              sed -i "s|^PKG_SOURCE_DATE.*|PKG_SOURCE_DATE:=$New_DATE|" Makefile
+              echo "  ? PKG_SOURCE_DATE: $Old_DATE → $New_DATE"
+            fi
+            
+            # 更新提交哈希 - 匹配PKG_SOURCE_VERSION行并替换
+            if [ -n "$Old_COMMIT" ]; then
+              if grep -q '^PKG_SOURCE_VERSION' Makefile; then
+                sed -i "s|^PKG_SOURCE_VERSION.*|PKG_SOURCE_VERSION:=$New_COMMIT|" Makefile
+                echo "  ? PKG_SOURCE_VERSION: ${Old_COMMIT:0:8} → ${New_COMMIT:0:8}"
+              fi
+            fi
+            
+            # 更新文件哈希 - 根据实际使用的变量名
+            if [ "$HASH_VAR" = "PKG_MIRROR_HASH" ]; then
+              sed -i "s|^PKG_MIRROR_HASH.*|PKG_MIRROR_HASH:=$New_HASH|" Makefile
+              echo "  ? PKG_MIRROR_HASH: ${Old_HASH:0:16}... → ${New_HASH:0:16}..."
+            else
+              sed -i "s|^PKG_HASH.*|PKG_HASH:=$New_HASH|" Makefile
+              echo "  ? PKG_HASH: ${Old_HASH:0:16}... → ${New_HASH:0:16}..."
+            fi
+            
+            echo "UPDATED=true" >> $GITHUB_ENV
+            echo "NEW_DATE=$New_DATE" >> $GITHUB_ENV
+            echo "NEW_COMMIT=${New_COMMIT:0:8}" >> $GITHUB_ENV
+            echo "updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "UPDATED=false" >> $GITHUB_ENV
+            echo "updated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and Push ${{ matrix.package }} Changes
+        if: steps.check_update.outputs.updated == 'true'
+        run: |
+          cd $GITHUB_WORKSPACE
+          
+          # 配置git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # Pull latest changes first to avoid conflicts
+          git pull origin main
+          
+          # 检查是否有变更
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "?? 检测到 ${{ matrix.package }} 文件变更，准备提交..."
+            git add ${{ matrix.folder }}/Makefile
+            git commit -m "${{ matrix.package }}: update to $NEW_DATE ($NEW_COMMIT)"
+            
+            # Retry push with pull in case of conflicts
+            for i in {1..3}; do
+              if git push origin main; then
+                echo "? 已成功提交并推送 ${{ matrix.package }} 更改"
+                break
+              else
+                echo "??  推送失败，尝试 $i/3"
+                git pull origin main --rebase
+                if [ $i -eq 3 ]; then
+                  echo "? 推送失败，已尝试3次"
+                  exit 1
+                fi
+              fi
+            done
+          else
+            echo "??  没有检测到 ${{ matrix.package }} 文件变更"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd ~/pack
+          rm -rf ${{ matrix.package }}_check ${{ matrix.package }}_hash ${{ matrix.package }}.tar.gz
