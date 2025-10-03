@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pakcages: [dns2tcp,ddns-go,dns2socks-rust,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
+        pakcages: [dns2tcp,ddns-go,dns2socks-rust,docker,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
         include:
           - pakcages: dns2tcp
             folder: dns2tcp
@@ -83,6 +83,16 @@ jobs:
             hash_head: PKG_HASH:=
             release_api_command: curl -sL "https://api.github.com/repos/tun2proxy/dns2socks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
             release_download_url: https://codeload.github.com/tun2proxy/dns2socks/tar.gz/v
+            file_name:
+
+          - pakcages: docker
+            folder: dockerd
+            version_line: 4
+            hash_line: 9
+            version_head: PKG_VERSION:=
+            hash_head: PKG_HASH:=
+            release_api_command: curl -sL "https://api.github.com/repos/docker/cli/tags" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_download_url: https://codeload.github.com/docker/cli/tar.gz/v
             file_name:
 
           - pakcages: dockerd
