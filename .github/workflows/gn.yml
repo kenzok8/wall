@@ -25,14 +25,14 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y zstd
 
-      - name: 获取 Makefile 旧版本信息
+      - name: Get old version from Makefile
         id: oldver
         run: |
           cd $GITHUB_WORKSPACE/gn
           echo "old_ver=$(sed -n '/^PKG_SOURCE_VERSION:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
           echo "old_date=$(sed -n '/^PKG_SOURCE_DATE:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
 
-      - name: 获取 gn 最新 commit
+      - name: Get latest gn commit
         id: newver
         run: |
           NEW_VER=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
@@ -44,18 +44,18 @@ jobs:
           echo "short_ver=$SHORT_VER" >> $GITHUB_OUTPUT
           echo "long_ver=$LONG_VER" >> $GITHUB_OUTPUT
 
-      - name: 判断是否需要更新
+      - name: Check if update is needed
         id: need_update
         run: |
           if [ "${{ steps.oldver.outputs.old_ver }}" = "${{ steps.newver.outputs.new_ver }}" ]; then
             echo "need=false" >> $GITHUB_OUTPUT
-            echo "gn为最新，无需更新"
+            echo "GN is up to date, no update needed"
           else
             echo "need=true" >> $GITHUB_OUTPUT
-            echo "有新版本，需更新"
+            echo "New version available, update required"
           fi
 
-      - name: 克隆并打包 gn
+      - name: Clone and package gn
         if: steps.need_update.outputs.need == 'true'
         id: pack
         run: |
@@ -73,12 +73,12 @@ jobs:
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
           echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
 
-      - name: 拷贝包到 feeds/downloads
+      - name: Copy package to feeds/downloads
         if: steps.need_update.outputs.need == 'true'
         run: |
           cp ~/pack/${{ steps.pack.outputs.tar_name }} $GITHUB_WORKSPACE/feeds/downloads/
 
-      - name: 更新 Makefile
+      - name: Update Makefile
         if: steps.need_update.outputs.need == 'true'
         run: |
           cd $GITHUB_WORKSPACE/gn
@@ -86,7 +86,7 @@ jobs:
           sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.newver.outputs.new_date }}" Makefile
           sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=${{ steps.pack.outputs.pkg_hash }}" Makefile
 
-      - name: 更新 last_commit_position.h
+      - name: Update last_commit_position.h
         if: steps.need_update.outputs.need == 'true'
         run: |
           COMMIT_POSITION_FILE="$GITHUB_WORKSPACE/gn/src/out/last_commit_position.h"
@@ -106,13 +106,13 @@ jobs:
           COMMIT_MSG="gn: auto update to ${{ steps.newver.outputs.short_ver }}"
           git commit -m "$COMMIT_MSG"
           git push origin main
-          echo "✅ 已成功提交并推送 gn 更改: $COMMIT_MSG"
+          echo "✅ Successfully committed and pushed gn changes: $COMMIT_MSG"
 
-      - name: 输出更新日志
+      - name: Output update log
         if: steps.need_update.outputs.need == 'true'
         run: |
-          echo "GN已自动更新:"
-          echo "新版本: ${{ steps.newver.outputs.new_ver }}"
-          echo "日期: ${{ steps.newver.outputs.new_date }}"
-          echo "hash: ${{ steps.pack.outputs.pkg_hash }}"
-          echo "commit position: ${{ steps.pack.outputs.commit_position }}"
+          echo "GN auto updated:"
+          echo "New version: ${{ steps.newver.outputs.new_ver }}"
+          echo "Date: ${{ steps.newver.outputs.new_date }}"
+          echo "Hash: ${{ steps.pack.outputs.pkg_hash }}"
+          echo "Commit position: ${{ steps.pack.outputs.commit_position }}"
