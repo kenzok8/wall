@@ -23,14 +23,6 @@ jobs:
       - name: Initialization environment
         run: |
           sudo timedatectl set-timezone "$TZ"
-
-      - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@main
-        with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 1
-          keep_minimum_runs: 1
         
       - name: SSH connection to Actions
         uses: kenzok78/ssh-action@master
