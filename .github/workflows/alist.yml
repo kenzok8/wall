@@ -35,7 +35,7 @@ jobs:
         uses: kenzok78/ssh-action@master
         if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
 
-  # 更新执行alist相关包
+  # 执行alist相关包
   job_auto_update_alist:
     if: ${{ always() }}
     needs: job_init
@@ -150,7 +150,7 @@ jobs:
             echo "没有检测到alist相关文件变更"
           fi
 
-  # 更新执行adguardhome相关包
+  # 执行adguardhome相关包
   job_auto_update_adguardhome:
     if: ${{ always() }}
     needs: job_init
@@ -241,126 +241,12 @@ jobs:
             done
           fi
 
-# 执行更新v2raya相关包
-job_auto_update_v2raya:
-  if: ${{ always() }}
-  needs: job_init
-  runs-on: ubuntu-latest
-  name: update-v2raya
-  steps:
-    - name: Checkout
-      uses: actions/checkout@main
-
-    - name: Initialization environment
-      run: |
-        cd && mkdir -p pack && cd pack
-        sudo timedatectl set-timezone "$TZ"
-
-    - name: Update v2raya
-      run: |
-        cd $GITHUB_WORKSPACE/v2raya
-        Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
-        New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-        
-        echo "v2raya当前版本: $Old_PKG_VERSION"
-        echo "v2raya最新版本: $New_PKG_VERSION"
-        
-        if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
-          echo "更新v2raya到版本: $New_PKG_VERSION"
-          sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
-          
-          cd ~/pack && mkdir -p v2raya && cd v2raya
-          wget https://codeload.github.com/v2rayA/v2rayA/tar.gz/v$New_PKG_VERSION
-          PKG_HASH=$(sha256sum v$New_PKG_VERSION | awk '{print $1}')
-          
-          cd $GITHUB_WORKSPACE/v2raya
-          sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
-          echo "V2RAYA_UPDATED=true" >> $GITHUB_ENV
-          echo "V2RAYA_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
-        else
-          echo "v2raya版本为最新版本,无需更新"
-          echo "V2RAYA_UPDATED=false" >> $GITHUB_ENV
-        fi
-
-    - name: Update v2raya-web
-      run: |
-        sleep 1
-        cd $GITHUB_WORKSPACE/v2raya
-        # v2raya-web的版本号与v2raya相同，从同一release获取
-        New_WEB_VERSION=$(curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-        
-        echo "v2raya-web检查版本: $New_WEB_VERSION"
-        
-        # 下载并更新web hash
-        cd ~/pack && mkdir -p v2raya-web && cd v2raya-web
-        rm -f web.tar.gz
-        wget https://github.com/v2rayA/v2rayA/releases/download/v$New_WEB_VERSION/web.tar.gz
-        WEB_HASH=$(sha256sum web.tar.gz | awk '{print $1}')
-        
-        cd $GITHUB_WORKSPACE/v2raya
-        Old_WEB_HASH=$(sed -n '63p' Makefile | sed 's/.*HASH:=\([a-f0-9]*\).*/\1/')
-        
-        echo "v2raya-web当前hash: $Old_WEB_HASH"
-        echo "v2raya-web最新hash: $WEB_HASH"
-        
-        if [ "$Old_WEB_HASH" != "$WEB_HASH" ]; then
-          echo "更新v2raya-web hash: $Old_WEB_HASH -> $WEB_HASH"
-          sed -i "63s/HASH:=.*/HASH:=$WEB_HASH/" Makefile
-          echo "V2RAYA_WEB_UPDATED=true" >> $GITHUB_ENV
-          echo "V2RAYA_WEB_VERSION=$New_WEB_VERSION" >> $GITHUB_ENV
-        else
-          echo "v2raya-web hash为最新,无需更新"
-          echo "V2RAYA_WEB_UPDATED=false" >> $GITHUB_ENV
-        fi
-
-    - name: Commit and Push v2raya Changes
-      if: env.V2RAYA_UPDATED == 'true' || env.V2RAYA_WEB_UPDATED == 'true'
-      run: |
-        cd $GITHUB_WORKSPACE
-        
-        # 配置git
-        git config --local user.email "actions@github.com"
-        git config --local user.name "GitHub Actions"
-        
-        # Pull latest changes first to avoid conflicts
-        git pull origin main
-        
-        # 检查是否有变更
-        if [ -n "$(git status --porcelain)" ]; then
-          echo "检测到v2raya相关文件变更，准备提交..."
-          git add v2raya/Makefile
-          
-          # 生成提交信息
-          commit_msg=""
-          if [ "$V2RAYA_UPDATED" = "true" ] && [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
-            commit_msg="v2raya: update to $V2RAYA_VERSION, v2raya-web: update hash"
-          elif [ "$V2RAYA_UPDATED" = "true" ]; then
-            commit_msg="v2raya: update to $V2RAYA_VERSION"
-          elif [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
-            commit_msg="v2raya-web: update hash for version $V2RAYA_WEB_VERSION"
-          fi
-          
-          git commit -m "$commit_msg"
-          
-          # Retry push with pull in case of conflicts
-          for i in {1..3}; do
-            if git push origin main; then
-              echo "✅ 已成功提交并推送v2raya更改: $commit_msg"
-              break
-            else
-              echo "Push failed, attempt $i/3. Pulling and retrying..."
-              git pull origin main --rebase
-              if [ $i -eq 3 ]; then
-                echo "❌ Failed to push after 3 attempts"
-                exit 1
-              fi
-            fi
-          done
-        else
-          echo "没有检测到v2raya相关文件变更"
-        fi
-            file_name: /web.tar.gz
-
+  # 执行v2raya相关包
+  job_auto_update_v2raya:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    name: update-v2raya
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -370,66 +256,65 @@ job_auto_update_v2raya:
           cd && mkdir -p pack && cd pack
           sudo timedatectl set-timezone "$TZ"
 
-      - name: Check ${{ matrix.pakcages }}
-        id: check
+      - name: Update v2raya
         run: |
-          is_continue=true
-
-          if [ "$is_continue" = "true" ]; then
-            cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-            if [ ! -n "${{ matrix.version_line }}" ] ; then
-              Old_PKG_VERSION=$(sed -n '/^${{ matrix.version_head }}/p' Makefile | awk -F '=' '{print $2}');
-            else
-              Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}');
-            fi
-            New_PKG_VERSION=$(${{ matrix.release_api_command }})
-            echo "${{ matrix.pakcages }}当前版本: $Old_PKG_VERSION"
-            echo "${{ matrix.pakcages }}最新版本: $New_PKG_VERSION"
-            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
-              echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }}版本为最新版本$New_PKG_VERSION,无需更新"; 
-            else 
-              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
-              echo "status=success" >> $GITHUB_OUTPUT;
-            fi
+          cd $GITHUB_WORKSPACE/v2raya
+          Old_PKG_VERSION=$(sed -n '8p' Makefile | awk -F '=' '{print $2}')
+          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          
+          echo "v2raya当前版本: $Old_PKG_VERSION"
+          echo "v2raya最新版本: $New_PKG_VERSION"
+          
+          if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "更新v2raya到版本: $New_PKG_VERSION"
+            sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            
+            cd ~/pack && mkdir -p v2raya && cd v2raya
+            wget https://codeload.github.com/v2rayA/v2rayA/tar.gz/v$New_PKG_VERSION
+            PKG_HASH=$(sha256sum v$New_PKG_VERSION | awk '{print $1}')
+            
+            cd $GITHUB_WORKSPACE/v2raya
+            sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
+            echo "V2RAYA_UPDATED=true" >> $GITHUB_ENV
+            echo "V2RAYA_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
           else
-            echo "status=failure" >> $GITHUB_OUTPUT;
+            echo "v2raya版本为最新版本,无需更新"
+            echo "V2RAYA_UPDATED=false" >> $GITHUB_ENV
           fi
 
-      - name: Update ${{ matrix.pakcages }}
-        id: update
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+      - name: Update v2raya-web
         run: |
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }}
-          New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
-          if [ ! -n "${{ matrix.version_line }}" ] ; then
-            sed -i -E "s/^([[:space:]]*)${{ matrix.version_head }}.*/\1${{ matrix.version_head }}$New_PKG_VERSION/" Makefile;
+          sleep 1
+          cd $GITHUB_WORKSPACE/v2raya
+          # v2raya-web的版本号与v2raya相同，从同一release获取
+          New_WEB_VERSION=$(curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
+          
+          echo "v2raya-web检查版本: $New_WEB_VERSION"
+          
+          # 下载并更新web hash
+          cd ~/pack && mkdir -p v2raya-web && cd v2raya-web
+          rm -f web.tar.gz
+          wget https://github.com/v2rayA/v2rayA/releases/download/v$New_WEB_VERSION/web.tar.gz
+          WEB_HASH=$(sha256sum web.tar.gz | awk '{print $1}')
+          
+          cd $GITHUB_WORKSPACE/v2raya
+          Old_WEB_HASH=$(sed -n '63p' Makefile | sed 's/.*HASH:=\([a-f0-9]*\).*/\1/')
+          
+          echo "v2raya-web当前hash: $Old_WEB_HASH"
+          echo "v2raya-web最新hash: $WEB_HASH"
+          
+          if [ "$Old_WEB_HASH" != "$WEB_HASH" ]; then
+            echo "更新v2raya-web hash: $Old_WEB_HASH -> $WEB_HASH"
+            sed -i "63s/HASH:=.*/HASH:=$WEB_HASH/" Makefile
+            echo "V2RAYA_WEB_UPDATED=true" >> $GITHUB_ENV
+            echo "V2RAYA_WEB_VERSION=$New_WEB_VERSION" >> $GITHUB_ENV
           else
-            indent=$(sed -n "${{ matrix.version_line }}s/^\([[:space:]]*\).*$/\1/p" Makefile);
-            sed -i "${{ matrix.version_line }}c ${indent}${{ matrix.version_head }}$New_PKG_VERSION" Makefile;
+            echo "v2raya-web hash为最新,无需更新"
+            echo "V2RAYA_WEB_UPDATED=false" >> $GITHUB_ENV
           fi
-          cd && cd pack && mkdir -p ${{ matrix.pakcages }} && cd ${{ matrix.pakcages }}
-          wget -P / ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
-          file_name=${{ matrix.file_name }}
-          is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-          if [ ! -n "${{ matrix.file_name }}" ]; then
-            PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION) && PKG_HASH=${PKG_HASH%% *}
-          else
-            PKG_HASH=$(sha256sum ${file_name##*/}) && PKG_HASH=${PKG_HASH%% *}
-          fi
-          cd && cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
-          if [ ! -n "${{ matrix.hash_line }}" ] ; then
-            sed -i -E "s/^([[:space:]]*)${{ matrix.hash_head }}.*/\1${{ matrix.hash_head }}$PKG_HASH/" Makefile;
-          else
-            indent=$(sed -n "${{ matrix.hash_line }}s/^\([[:space:]]*\).*$/\1/p" Makefile);
-            sed -i "${{ matrix.hash_line }}c ${indent}${{ matrix.hash_head }}$PKG_HASH" Makefile; 
-          fi
-          echo "已更新${{ matrix.pakcages }}版本到: $New_PKG_VERSION"
-          echo "${{ matrix.pakcages }} Hash:$PKG_HASH"
-          echo "version=$New_PKG_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Commit and Push ${{ matrix.pakcages }} Changes
-        if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
+      - name: Commit and Push v2raya Changes
+        if: env.V2RAYA_UPDATED == 'true' || env.V2RAYA_WEB_UPDATED == 'true'
         run: |
           cd $GITHUB_WORKSPACE
           
@@ -442,24 +327,35 @@ job_auto_update_v2raya:
           
           # 检查是否有变更
           if [ -n "$(git status --porcelain)" ]; then
-            echo "检测到${{ matrix.pakcages }}文件变更，准备提交..."
-            git add ${{ matrix.folder }}/Makefile
-            git commit -m "${{ matrix.pakcages }}: update to ${{ steps.update.outputs.version }}"
+            echo "检测到v2raya相关文件变更，准备提交..."
+            git add v2raya/Makefile
+            
+            # 生成提交信息
+            commit_msg=""
+            if [ "$V2RAYA_UPDATED" = "true" ] && [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
+              commit_msg="v2raya: update to $V2RAYA_VERSION, v2raya-web: update hash"
+            elif [ "$V2RAYA_UPDATED" = "true" ]; then
+              commit_msg="v2raya: update to $V2RAYA_VERSION"
+            elif [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
+              commit_msg="v2raya-web: update hash for version $V2RAYA_WEB_VERSION"
+            fi
+            
+            git commit -m "$commit_msg"
             
             # Retry push with pull in case of conflicts
             for i in {1..3}; do
               if git push origin main; then
-                echo "✅ 已成功提交并推送 ${{ matrix.pakcages }} 更改到版本 ${{ steps.update.outputs.version }}"
+                echo "✅ 已成功提交并推送v2raya更改: $commit_msg"
                 break
               else
-                echo "Push failed for ${{ matrix.pakcages }}, attempt $i/3. Pulling and retrying..."
+                echo "Push failed, attempt $i/3. Pulling and retrying..."
                 git pull origin main --rebase
                 if [ $i -eq 3 ]; then
-                  echo "❌ Failed to push ${{ matrix.pakcages }} after 3 attempts"
+                  echo "❌ Failed to push after 3 attempts"
                   exit 1
                 fi
               fi
             done
           else
-            echo "没有检测到${{ matrix.pakcages }}文件变更"
+            echo "没有检测到v2raya相关文件变更"
           fi
