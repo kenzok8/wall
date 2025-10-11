@@ -60,6 +60,7 @@ jobs:
           echo "alist最新版本: $New_PKG_VERSION"
           
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "检测到版本更新，开始下载源码并计算HASH..."
             echo "更新alist到版本: $New_PKG_VERSION"
             sed -i "10c PKG_VERSION:=$New_PKG_VERSION" Makefile
             
@@ -72,7 +73,7 @@ jobs:
             echo "ALIST_UPDATED=true" >> $GITHUB_ENV
             echo "ALIST_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
           else
-            echo "alist版本为最新版本,无需更新"
+            echo "alist版本为最新版本,无需更新，跳过下载"
             echo "ALIST_UPDATED=false" >> $GITHUB_ENV
           fi
 
@@ -87,6 +88,7 @@ jobs:
           echo "alist-web最新版本: $New_WEB_VERSION"
           
           if [ "$Old_WEB_VERSION" != "$New_WEB_VERSION" ]; then
+            echo "检测到版本更新，开始下载并计算HASH..."
             echo "更新alist-web到版本: $New_WEB_VERSION"
             sed -i "11c PKG_WEB_VERSION:=$New_WEB_VERSION" Makefile
             
@@ -99,7 +101,7 @@ jobs:
             echo "ALIST_WEB_UPDATED=true" >> $GITHUB_ENV
             echo "ALIST_WEB_VERSION=$New_WEB_VERSION" >> $GITHUB_ENV
           else
-            echo "alist-web版本为最新版本,无需更新"
+            echo "alist-web版本为最新版本,无需更新，跳过下载"
             echo "ALIST_WEB_UPDATED=false" >> $GITHUB_ENV
           fi
 
@@ -178,6 +180,7 @@ jobs:
           
           # 更新主程序版本和hash
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "检测到版本更新，开始下载源码并计算HASH..."
             echo "更新adguardhome到版本: $New_PKG_VERSION"
             sed -i "9c PKG_VERSION:=$New_PKG_VERSION" Makefile
             
@@ -187,29 +190,26 @@ jobs:
             
             cd $GITHUB_WORKSPACE/adguardhome
             sed -i "14c PKG_HASH:=$PKG_HASH" Makefile
-            UPDATED=true
-          fi
-          
-          # 更新frontend hash (使用最新版本号)
-          cd ~/pack && mkdir -p adguardhome-frontend && cd adguardhome-frontend
-          rm -f AdGuardHome_frontend.tar.gz
-          wget https://github.com/AdguardTeam/AdGuardHome/releases/download/v$New_PKG_VERSION/AdGuardHome_frontend.tar.gz
-          FRONTEND_HASH=$(sha256sum AdGuardHome_frontend.tar.gz | awk '{print $1}')
-          
-          cd $GITHUB_WORKSPACE/adguardhome
-          Old_FRONTEND_HASH=$(sed -n '61p' Makefile | sed 's/.*HASH:=\([a-f0-9]*\).*/\1/')
-          
-          if [ "$Old_FRONTEND_HASH" != "$FRONTEND_HASH" ]; then
-            echo "更新adguardhome-frontend hash: $Old_FRONTEND_HASH -> $FRONTEND_HASH"
+            
+            # 版本更新时，同时更新frontend hash
+            echo "版本更新，同时下载并更新frontend hash..."
+            cd ~/pack && mkdir -p adguardhome-frontend && cd adguardhome-frontend
+            rm -f AdGuardHome_frontend.tar.gz
+            wget https://github.com/AdguardTeam/AdGuardHome/releases/download/v$New_PKG_VERSION/AdGuardHome_frontend.tar.gz
+            FRONTEND_HASH=$(sha256sum AdGuardHome_frontend.tar.gz | awk '{print $1}')
+            
+            cd $GITHUB_WORKSPACE/adguardhome
             sed -i "61s/HASH:=.*/HASH:=$FRONTEND_HASH/" Makefile
+            
             UPDATED=true
+          else
+            echo "adguardhome版本为最新版本,无需更新，跳过下载"
           fi
           
           if [ "$UPDATED" = "true" ]; then
             echo "ADGUARD_UPDATED=true" >> $GITHUB_ENV
             echo "ADGUARD_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
           else
-            echo "adguardhome无需更新"
             echo "ADGUARD_UPDATED=false" >> $GITHUB_ENV
           fi
 
@@ -266,6 +266,7 @@ jobs:
           echo "v2raya最新版本: $New_PKG_VERSION"
           
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
+            echo "检测到版本更新，开始下载源码并计算HASH..."
             echo "更新v2raya到版本: $New_PKG_VERSION"
             sed -i "8c PKG_VERSION:=$New_PKG_VERSION" Makefile
             
@@ -277,44 +278,26 @@ jobs:
             sed -i "13c PKG_HASH:=$PKG_HASH" Makefile
             echo "V2RAYA_UPDATED=true" >> $GITHUB_ENV
             echo "V2RAYA_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
-          else
-            echo "v2raya版本为最新版本,无需更新"
-            echo "V2RAYA_UPDATED=false" >> $GITHUB_ENV
-          fi
-
-      - name: Update v2raya-web
-        run: |
-          sleep 1
-          cd $GITHUB_WORKSPACE/v2raya
-          # v2raya-web的版本号与v2raya相同，从同一release获取
-          New_WEB_VERSION=$(curl -sL "https://api.github.com/repos/v2rayA/v2rayA/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
-          
-          echo "v2raya-web检查版本: $New_WEB_VERSION"
-          
-          # 下载并更新web hash
-          cd ~/pack && mkdir -p v2raya-web && cd v2raya-web
-          rm -f web.tar.gz
-          wget https://github.com/v2rayA/v2rayA/releases/download/v$New_WEB_VERSION/web.tar.gz
-          WEB_HASH=$(sha256sum web.tar.gz | awk '{print $1}')
-          
-          cd $GITHUB_WORKSPACE/v2raya
-          Old_WEB_HASH=$(sed -n '63p' Makefile | sed 's/.*HASH:=\([a-f0-9]*\).*/\1/')
-          
-          echo "v2raya-web当前hash: $Old_WEB_HASH"
-          echo "v2raya-web最新hash: $WEB_HASH"
-          
-          if [ "$Old_WEB_HASH" != "$WEB_HASH" ]; then
-            echo "更新v2raya-web hash: $Old_WEB_HASH -> $WEB_HASH"
+            
+            # 版本更新时，同时更新web hash
+            echo "版本更新，同时下载并更新v2raya-web hash..."
+            cd ~/pack && mkdir -p v2raya-web && cd v2raya-web
+            rm -f web.tar.gz
+            wget https://github.com/v2rayA/v2rayA/releases/download/v$New_PKG_VERSION/web.tar.gz
+            WEB_HASH=$(sha256sum web.tar.gz | awk '{print $1}')
+            
+            cd $GITHUB_WORKSPACE/v2raya
             sed -i "63s/HASH:=.*/HASH:=$WEB_HASH/" Makefile
             echo "V2RAYA_WEB_UPDATED=true" >> $GITHUB_ENV
-            echo "V2RAYA_WEB_VERSION=$New_WEB_VERSION" >> $GITHUB_ENV
+            echo "V2RAYA_WEB_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
           else
-            echo "v2raya-web hash为最新,无需更新"
+            echo "v2raya版本为最新版本,无需更新，跳过下载"
+            echo "V2RAYA_UPDATED=false" >> $GITHUB_ENV
             echo "V2RAYA_WEB_UPDATED=false" >> $GITHUB_ENV
           fi
 
       - name: Commit and Push v2raya Changes
-        if: env.V2RAYA_UPDATED == 'true' || env.V2RAYA_WEB_UPDATED == 'true'
+        if: env.V2RAYA_UPDATED == 'true'
         run: |
           cd $GITHUB_WORKSPACE
           
@@ -331,13 +314,9 @@ jobs:
             git add v2raya/Makefile
             
             # 生成提交信息
-            commit_msg=""
-            if [ "$V2RAYA_UPDATED" = "true" ] && [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
-              commit_msg="v2raya: update to $V2RAYA_VERSION, v2raya-web: update hash"
-            elif [ "$V2RAYA_UPDATED" = "true" ]; then
-              commit_msg="v2raya: update to $V2RAYA_VERSION"
-            elif [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
-              commit_msg="v2raya-web: update hash for version $V2RAYA_WEB_VERSION"
+            commit_msg="v2raya: update to $V2RAYA_VERSION"
+            if [ "$V2RAYA_WEB_UPDATED" = "true" ]; then
+              commit_msg="v2raya: update to $V2RAYA_VERSION (including web hash)"
             fi
             
             git commit -m "$commit_msg"
