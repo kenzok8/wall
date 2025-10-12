@@ -64,11 +64,24 @@ jobs:
           cd gn-source
           git checkout ${{ steps.newver.outputs.new_ver }}
           COMMIT_POSITION=$(git rev-list --count HEAD)
-          rm -rf .git
+          # 获取 git commit 时间戳
+          TAR_TIMESTAMP=$(git log -1 --format='@%ct')
           cd ..
-          TAR_NAME="gn-${{ steps.newver.outputs.new_date }}~${{ steps.newver.outputs.short_ver }}.tar.zst"
-          tar -cf - gn-source/ | zstd -19 -T0 > $TAR_NAME
-          PKG_HASH=$(sha256sum $TAR_NAME | awk '{print $1}')
+          
+          # 使用与 Makefile 中 PKG_SOURCE_DATE 一致的目录名
+          DIR_NAME="gn-${{ steps.newver.outputs.new_date }}~${{ steps.newver.outputs.short_ver }}"
+          TAR_NAME="${DIR_NAME}.tar.zst"
+          
+          # 重命名目录以匹配期望的格式
+          mv gn-source "$DIR_NAME"
+          
+          # 使用 OpenWrt 标准的打包参数
+          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+              --mtime="$TAR_TIMESTAMP" \
+              -cf - "$DIR_NAME" | \
+              zstd -T0 --ultra -20 > "$TAR_NAME"
+          
+          PKG_HASH=$(sha256sum "$TAR_NAME" | awk '{print $1}')
           echo "tar_name=$TAR_NAME" >> $GITHUB_OUTPUT
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
           echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
