@@ -54,7 +54,28 @@ jobs:
           cd $GITHUB_WORKSPACE/chinadns-ng
           
           Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
-          New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/.*v//')
+          
+          # Fetch releases with better error handling
+          api_response=$(curl -sL "https://api.github.com/repos/zfl9/chinadns-ng/releases")
+          
+          # Check if API response is a valid array
+          if echo "$api_response" | jq -e 'type=="array"' > /dev/null 2>&1; then
+            # Extract latest non-prerelease version
+            New_PKG_VERSION=$(echo "$api_response" | jq -r 'map(select(.prerelease|not)) | first | .tag_name' | sed -e 's/^v//')
+            
+            # Verify we got a valid version
+            if [ -z "$New_PKG_VERSION" ] || [ "$New_PKG_VERSION" = "null" ]; then
+              echo "❌ Failed to extract version from GitHub API"
+              echo "CHINADNS_UPDATED=false" >> $GITHUB_ENV
+              exit 0
+            fi
+          else
+            echo "❌ Error: Unexpected API response (not an array)"
+            echo "API Response: $(echo "$api_response" | head -c 500)"
+            echo "This might be due to rate limiting or API issues. Exiting gracefully."
+            echo "CHINADNS_UPDATED=false" >> $GITHUB_ENV
+            exit 0
+          fi
           
           echo "chinadns-ng当前版本: $Old_PKG_VERSION"
           echo "chinadns-ng最新版本: $New_PKG_VERSION"
@@ -81,32 +102,47 @@ jobs:
               [40]="chinadns-ng+wolfssl@x86_64-linux-musl@x86_64@fast+lto"
             )
             
+            FAILED_DOWNLOADS=0
+            
             for hash_line in "${!arch_files[@]}"; do
               file_name="${arch_files[$hash_line]}"
               echo "处理架构文件: $file_name (行号: $hash_line)"
 
-              wget -q "https://github.com/zfl9/chinadns-ng/releases/download/$New_PKG_VERSION/$file_name"
+              # Download with version prefix 'v'
+              DOWNLOAD_URL="https://github.com/zfl9/chinadns-ng/releases/download/v${New_PKG_VERSION}/${file_name}"
+              echo "下载地址: $DOWNLOAD_URL"
               
-              if [ -f "$file_name" ]; then
+              if wget -q "$DOWNLOAD_URL"; then
+                if [ -f "$file_name" ]; then
+                  PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
+                  echo "✅ $file_name 哈希值: $PKG_HASH"
 
-                PKG_HASH=$(sha256sum "$file_name" | awk '{print $1}')
-                echo "$file_name 哈希值: $PKG_HASH"
-
-                cd $GITHUB_WORKSPACE/chinadns-ng
-                if [ "$hash_line" -eq 12 ] || [ "$hash_line" -eq 15 ] || [ "$hash_line" -eq 21 ] || [ "$hash_line" -eq 24 ]; then
-                  # aarch64 和 arm 架构使用4个空格缩进
-                  sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
+                  cd $GITHUB_WORKSPACE/chinadns-ng
+                  if [ "$hash_line" -eq 12 ] || [ "$hash_line" -eq 15 ] || [ "$hash_line" -eq 21 ] || [ "$hash_line" -eq 24 ]; then
+                    # aarch64 和 arm 架构使用4个空格缩进
+                    sed -i "${hash_line}c\    PKG_HASH:=$PKG_HASH" Makefile
+                  else
+                    sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
+                  fi
+                  
+                  cd ~/pack/chinadns-ng
                 else
-                  sed -i "${hash_line}c\  PKG_HASH:=$PKG_HASH" Makefile
+                  echo "❌ 下载后文件不存在: $file_name"
+                  FAILED_DOWNLOADS=$((FAILED_DOWNLOADS + 1))
                 fi
-                
-                cd ~/pack/chinadns-ng
               else
-                echo "警告: 无法下载文件 $file_name"
+                echo "❌ 下载失败: $file_name"
+                FAILED_DOWNLOADS=$((FAILED_DOWNLOADS + 1))
               fi
             done
             
-            echo "所有架构文件哈希更新完成"
+            if [ $FAILED_DOWNLOADS -gt 0 ]; then
+              echo "⚠️  警告: $FAILED_DOWNLOADS 个文件下载失败"
+              echo "CHINADNS_UPDATED=false" >> $GITHUB_ENV
+              exit 1
+            fi
+            
+            echo "✅ 所有架构文件哈希更新完成"
           else
             echo "chinadns-ng版本为最新版本,无需更新"
             echo "CHINADNS_UPDATED=false" >> $GITHUB_ENV
