@@ -101,8 +101,8 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/moby/moby/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/moby/moby/tar.gz/v
+            release_api_command: curl -sL "https://api.github.com/repos/moby/moby/releases/latest" | grep "tag_name" | head -n 1 | awk -F '"' '{print $2}' | sed 's/docker-//'
+            release_download_url: https://codeload.github.com/moby/moby/tar.gz/
             file_name:            
 
           - pakcages: filebrowser
