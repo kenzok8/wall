@@ -64,24 +64,25 @@ jobs:
           cd gn-source
           git checkout ${{ steps.newver.outputs.new_ver }}
           COMMIT_POSITION=$(git rev-list --count HEAD)
-          # 获取 git commit 时间戳
-          TAR_TIMESTAMP=$(git log -1 --format='@%ct')
+          TAR_TIMESTAMP=$(git log -1 --format='%ct')
           cd ..
           
-          # 使用与 Makefile 中 PKG_SOURCE_DATE 一致的目录名
           DIR_NAME="gn-${{ steps.newver.outputs.new_date }}~${{ steps.newver.outputs.short_ver }}"
           TAR_NAME="${DIR_NAME}.tar.zst"
-          
-          # 重命名目录以匹配期望的格式
           mv gn-source "$DIR_NAME"
           
-          # 使用更兼容的打包参数，确保跨平台 hash 一致
-          tar --numeric-owner --owner=0 --group=0 \
-              --mtime="$TAR_TIMESTAMP" \
-              -cf - "$DIR_NAME" | \
-              zstd -T0 --ultra -20 > "$TAR_NAME"
+          # 使用 Docker 确保跨平台 hash 一致
+          docker run --rm -v "$HOME/pack:/data" ubuntu:jammy sh -c "
+            apt-get update -y && apt-get install -y zstd
+            cd /data
+            tar --numeric-owner --owner=0 --group=0 \
+                --mtime='$TAR_TIMESTAMP' \
+                -cf - '$DIR_NAME' | \
+                zstd -T0 --ultra -20 > '$TAR_NAME'
+            sha256sum '$TAR_NAME'
+          "
           
-          PKG_HASH=$(sha256sum "$TAR_NAME" | awk '{print $1}')
+          PKG_HASH=$(sha256sum "$HOME/pack/$TAR_NAME" | awk '{print $1}')
           echo "tar_name=$TAR_NAME" >> $GITHUB_OUTPUT
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
           echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
