@@ -75,8 +75,8 @@ jobs:
           # 重命名目录以匹配期望的格式
           mv gn-source "$DIR_NAME"
           
-          # 使用 OpenWrt 标准的打包参数
-          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+          # 使用更兼容的打包参数，确保跨平台 hash 一致
+          tar --numeric-owner --owner=0 --group=0 \
               --mtime="$TAR_TIMESTAMP" \
               -cf - "$DIR_NAME" | \
               zstd -T0 --ultra -20 > "$TAR_NAME"
