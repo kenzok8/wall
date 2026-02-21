@@ -67,11 +67,12 @@ jobs:
           TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
           cd ..
 
-          DIR_NAME="gn-${NEW_DATE}~${{ steps.newver.outputs.short_ver }}"
+          DIR_DATE=${NEW_DATE//-/.}
+          DIR_NAME="gn-${DIR_DATE}~${{ steps.newver.outputs.short_ver }}"
           TAR_NAME="${DIR_NAME}.tar.zst"
 
           (cd gn-source && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
-          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null || true
+          tar --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null || true
 
           rm -rf gn-source
           mkdir "$DIR_NAME"
