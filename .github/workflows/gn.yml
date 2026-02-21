@@ -7,6 +7,10 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
+      force_rehash:
+        description: 'Force recompute hash even if same version'
+        required: false
+        default: 'false'
   schedule:
     - cron: "0 0 * * 0"
 env:
@@ -31,6 +35,7 @@ jobs:
           cd $GITHUB_WORKSPACE/gn
           echo "old_ver=$(sed -n '/^PKG_SOURCE_VERSION:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
           echo "old_date=$(sed -n '/^PKG_SOURCE_DATE:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
+          echo "old_hash=$(sed -n '/^PKG_MIRROR_HASH:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
 
       - name: Get latest gn commit
         id: newver
@@ -42,19 +47,7 @@ jobs:
           echo "short_ver=$SHORT_VER" >> $GITHUB_OUTPUT
           echo "long_ver=$LONG_VER" >> $GITHUB_OUTPUT
 
-      - name: Check if update is needed
-        id: need_update
-        run: |
-          if [ "${{ steps.oldver.outputs.old_ver }}" = "${{ steps.newver.outputs.new_ver }}" ]; then
-            echo "need=false" >> $GITHUB_OUTPUT
-            echo "GN is up to date, no update needed"
-          else
-            echo "need=true" >> $GITHUB_OUTPUT
-            echo "New version available, update required"
-          fi
-
       - name: Clone and package gn
-        if: steps.need_update.outputs.need == 'true'
         id: pack
         run: |
           mkdir -p ~/pack && cd ~/pack
@@ -96,6 +89,36 @@ jobs:
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
           echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
 
+      - name: Check if update is needed
+        id: need_update
+        run: |
+          NEED="false"
+          REASON=""
+
+          if [ "${{ steps.oldver.outputs.old_ver }}" != "${{ steps.newver.outputs.new_ver }}" ]; then
+            NEED="true"
+            REASON="new version"
+          fi
+
+          if [ "${{ steps.oldver.outputs.old_date }}" != "${{ steps.pack.outputs.new_date }}" ]; then
+            NEED="true"
+            [ -z "$REASON" ] && REASON="new source date"
+          fi
+
+          if [ "${{ steps.oldver.outputs.old_hash }}" != "${{ steps.pack.outputs.pkg_hash }}" ]; then
+            NEED="true"
+            [ -z "$REASON" ] && REASON="hash changed"
+          fi
+
+          if [ "${{ github.event.inputs.force_rehash }}" = "true" ]; then
+            NEED="true"
+            [ -z "$REASON" ] && REASON="force rehash"
+          fi
+
+          echo "need=$NEED" >> $GITHUB_OUTPUT
+          echo "reason=${REASON:-no change}" >> $GITHUB_OUTPUT
+          echo "Need update: $NEED (${REASON:-no change})"
+
       - name: Update Makefile
         if: steps.need_update.outputs.need == 'true'
         run: |
@@ -130,6 +153,7 @@ jobs:
         if: steps.need_update.outputs.need == 'true'
         run: |
           echo "GN auto updated:"
+          echo "Reason: ${{ steps.need_update.outputs.reason }}"
           echo "New version: ${{ steps.newver.outputs.new_ver }}"
           echo "Date: ${{ steps.pack.outputs.new_date }}"
           echo "Hash: ${{ steps.pack.outputs.pkg_hash }}"
