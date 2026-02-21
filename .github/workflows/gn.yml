@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: Set timezone & install zstd
         run: |
@@ -36,11 +36,9 @@ jobs:
         id: newver
         run: |
           NEW_VER=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
-          NEW_DATE=$(date +%Y-%m-%d)
           SHORT_VER=${NEW_VER:0:8}
           LONG_VER=${NEW_VER:0:12}
           echo "new_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          echo "new_date=$NEW_DATE" >> $GITHUB_OUTPUT
           echo "short_ver=$SHORT_VER" >> $GITHUB_OUTPUT
           echo "long_ver=$LONG_VER" >> $GITHUB_OUTPUT
 
@@ -60,29 +58,39 @@ jobs:
         id: pack
         run: |
           mkdir -p ~/pack && cd ~/pack
+          rm -rf gn-source
           git clone https://gn.googlesource.com/gn.git gn-source
           cd gn-source
           git checkout ${{ steps.newver.outputs.new_ver }}
+          NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
           COMMIT_POSITION=$(git rev-list --count HEAD)
-          TAR_TIMESTAMP=$(git log -1 --format='%ct')
+          TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
           cd ..
-          
-          DIR_NAME="gn-${{ steps.newver.outputs.new_date }}~${{ steps.newver.outputs.short_ver }}"
+
+          DIR_NAME="gn-${NEW_DATE}~${{ steps.newver.outputs.short_ver }}"
           TAR_NAME="${DIR_NAME}.tar.zst"
-          mv gn-source "$DIR_NAME"
-          
-          # 使用 Docker 确保跨平台 hash 一致
+
+          (cd gn-source && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
+          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null || true
+
+          rm -rf gn-source
+          mkdir "$DIR_NAME"
+          tar -C "$DIR_NAME" -xf "${DIR_NAME}.tar.git"
+          (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules) || true
+
+          # 使用 Docker 确保和 OpenWrt runner 一致
           docker run --rm -v "$HOME/pack:/data" ubuntu:jammy sh -c "
             apt-get update -y && apt-get install -y zstd
             cd /data
             tar --numeric-owner --owner=0 --group=0 \
-                --mtime='$TAR_TIMESTAMP' \
+                --mode=a-s --sort=name --mtime='$TAR_TIMESTAMP' \
                 -cf - '$DIR_NAME' | \
                 zstd -T0 --ultra -20 > '$TAR_NAME'
             sha256sum '$TAR_NAME'
           "
           
           PKG_HASH=$(sha256sum "$HOME/pack/$TAR_NAME" | awk '{print $1}')
+          echo "new_date=$NEW_DATE" >> $GITHUB_OUTPUT
           echo "tar_name=$TAR_NAME" >> $GITHUB_OUTPUT
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
           echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
@@ -92,7 +100,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/gn
           sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=${{ steps.newver.outputs.new_ver }}" Makefile
-          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.newver.outputs.new_date }}" Makefile
+          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.pack.outputs.new_date }}" Makefile
           sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=${{ steps.pack.outputs.pkg_hash }}" Makefile
 
       - name: Update last_commit_position.h
@@ -122,6 +130,6 @@ jobs:
         run: |
           echo "GN auto updated:"
           echo "New version: ${{ steps.newver.outputs.new_ver }}"
-          echo "Date: ${{ steps.newver.outputs.new_date }}"
+          echo "Date: ${{ steps.pack.outputs.new_date }}"
           echo "Hash: ${{ steps.pack.outputs.pkg_hash }}"
           echo "Commit position: ${{ steps.pack.outputs.commit_position }}"
