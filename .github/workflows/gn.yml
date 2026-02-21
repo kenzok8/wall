@@ -119,11 +119,6 @@ jobs:
             [ -z "$REASON" ] && REASON="hash changed"
           fi
 
-          if [ "${{ github.event.inputs.force_rehash }}" = "true" ]; then
-            NEED="true"
-            [ -z "$REASON" ] && REASON="force rehash"
-          fi
-
           echo "need=$NEED" >> $GITHUB_OUTPUT
           echo "reason=${REASON:-no change}" >> $GITHUB_OUTPUT
           echo "Need update: $NEED (${REASON:-no change})"
@@ -154,6 +149,10 @@ jobs:
           git add gn/Makefile
           git add gn/src/out/last_commit_position.h || true
           COMMIT_MSG="gn: auto update to ${{ steps.newver.outputs.short_ver }}"
+          if git diff --cached --quiet; then
+            echo "No file changes after hash/version check, skip commit"
+            exit 0
+          fi
           git commit -m "$COMMIT_MSG"
           git push origin main
           echo "✅ Successfully committed and pushed gn changes: $COMMIT_MSG"
