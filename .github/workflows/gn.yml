@@ -71,12 +71,12 @@ jobs:
           TAR_NAME="${DIR_NAME}.tar.zst"
 
           (cd gn-source && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
-          tar --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null || true
+          tar --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null
 
           rm -rf gn-source
           mkdir "$DIR_NAME"
           tar -C "$DIR_NAME" -xf "${DIR_NAME}.tar.git"
-          (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules) || true
+          (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules)
 
           tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$TAR_NAME"
           sha256sum "$TAR_NAME" | awk '{print $1}' > hash.txt
