@@ -85,7 +85,7 @@ jobs:
           EOF
           chmod +x calc_gn_hash.sh
 
-          docker run --rm -v "$HOME/pack:/work" ghcr.io/openwrt/sdk:x86_64-24.10.2 /bin/bash -lc "cd /work && ./calc_gn_hash.sh '${{ steps.newver.outputs.new_ver }}' '${{ steps.newver.outputs.short_ver }}'"
+          docker run --rm --user root -v "$HOME/pack:/work" ghcr.io/openwrt/sdk:x86_64-24.10.2 /bin/bash -lc "cd /work && ./calc_gn_hash.sh '${{ steps.newver.outputs.new_ver }}' '${{ steps.newver.outputs.short_ver }}'"
 
           PKG_HASH=$(cat hash.txt)
           NEW_DATE=$(cat new_date.txt)
