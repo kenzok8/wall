@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           ref: 'main'
 
@@ -367,7 +367,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           ref: 'main'
 
@@ -442,4 +442,116 @@ jobs:
             echo "✅ 已成功提交并推送 ${{ matrix.pakcages }} 更改到版本 ${{ steps.update.outputs.version }}"
           else
             echo "没有检测到 ${{ matrix.pakcages }} 文件变更"
+          fi
+
+  job_auto_update_shadowsocks_libev:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    name: Auto-update-shadowsocks-libev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+
+      - name: Initialization environment
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+          sudo apt-get update -y
+          sudo apt-get install -y zstd
+
+      - name: Check shadowsocks-libev upstream
+        id: check_ss_libev
+        run: |
+          cd "$GITHUB_WORKSPACE/shadowsocks-libev"
+          OLD_VER=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+          OLD_COMMIT=$(sed -n '/^PKG_SOURCE_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+
+          NEW_TAG=$(curl -fsSL https://api.github.com/repos/shadowsocks/shadowsocks-libev/releases/latest | grep '"tag_name"' | head -n1 | awk -F '"' '{print $4}')
+          NEW_VER=${NEW_TAG#v}
+          NEW_COMMIT=$(git ls-remote https://github.com/shadowsocks/shadowsocks-libev.git "refs/tags/${NEW_TAG}^{}" | cut -f1)
+          [ -z "$NEW_COMMIT" ] && NEW_COMMIT=$(git ls-remote https://github.com/shadowsocks/shadowsocks-libev.git "refs/tags/${NEW_TAG}" | cut -f1)
+
+          ISO_DATE=$(curl -fsSL https://api.github.com/repos/shadowsocks/shadowsocks-libev/commits/$NEW_COMMIT | grep '"date"' | head -n1 | awk -F '"' '{print $4}')
+          NEW_DATE=$(date -u -d "$ISO_DATE" +%Y-%-m-%-d)
+
+          echo "当前版本: $OLD_VER ($OLD_COMMIT)"
+          echo "最新版本: $NEW_VER ($NEW_COMMIT)"
+
+          if [ "$OLD_VER" = "$NEW_VER" ] && [ "$OLD_COMMIT" = "$NEW_COMMIT" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "无需更新 shadowsocks-libev"
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "new_ver=$NEW_VER" >> $GITHUB_OUTPUT
+            echo "new_commit=$NEW_COMMIT" >> $GITHUB_OUTPUT
+            echo "new_date=$NEW_DATE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build mirror hash for shadowsocks-libev
+        id: build_hash
+        if: steps.check_ss_libev.outputs.status == 'success' && !cancelled()
+        run: |
+          PKG_NAME=shadowsocks-libev
+          NEW_VER=${{ steps.check_ss_libev.outputs.new_ver }}
+          NEW_COMMIT=${{ steps.check_ss_libev.outputs.new_commit }}
+          NEW_DATE=${{ steps.check_ss_libev.outputs.new_date }}
+          SHORT_COMMIT=${NEW_COMMIT:0:8}
+          DIR_NAME="${PKG_NAME}-${NEW_VER}~${NEW_DATE}~${SHORT_COMMIT}"
+
+          mkdir -p ~/main/shadowsocks-libev && cd ~/main/shadowsocks-libev
+          rm -rf src "$DIR_NAME" "$DIR_NAME.tar.git" "$DIR_NAME.tar.zst"
+
+          git clone https://github.com/shadowsocks/shadowsocks-libev.git src
+          cd src
+          git checkout "$NEW_COMMIT"
+          TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
+          cd ..
+
+          (cd src && git config core.abbrev 8 && git archive --format=tar HEAD --output="../$DIR_NAME.tar.git")
+          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C src -f "$DIR_NAME.tar.git" -r .git .gitmodules 2>/dev/null || true
+
+          rm -rf src
+          mkdir "$DIR_NAME"
+          tar -C "$DIR_NAME" -xf "$DIR_NAME.tar.git"
+          (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules) || true
+
+          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$DIR_NAME.tar.zst"
+          PKG_HASH=$(sha256sum "$DIR_NAME.tar.zst" | awk '{print $1}')
+
+          echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
+
+      - name: Update shadowsocks-libev Makefile
+        id: update_ss_libev
+        if: steps.check_ss_libev.outputs.status == 'success' && !cancelled()
+        run: |
+          cd "$GITHUB_WORKSPACE/shadowsocks-libev"
+          NEW_VER=${{ steps.check_ss_libev.outputs.new_ver }}
+          NEW_COMMIT=${{ steps.check_ss_libev.outputs.new_commit }}
+          NEW_DATE=${{ steps.check_ss_libev.outputs.new_date }}
+          PKG_HASH=${{ steps.build_hash.outputs.pkg_hash }}
+
+          sed -i "/^PKG_VERSION:=/c\PKG_VERSION:=$NEW_VER" Makefile
+          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$NEW_DATE" Makefile
+          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=$NEW_COMMIT" Makefile
+          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$PKG_HASH" Makefile
+
+          echo "version=$NEW_VER" >> $GITHUB_OUTPUT
+          echo "short_commit=${NEW_COMMIT:0:8}" >> $GITHUB_OUTPUT
+
+      - name: Commit and Push shadowsocks-libev Changes
+        if: steps.check_ss_libev.outputs.status == 'success' && !cancelled()
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git add shadowsocks-libev/Makefile
+            git commit -m "shadowsocks-libev: update to ${{ steps.update_ss_libev.outputs.version }} (${{ steps.update_ss_libev.outputs.short_commit }})"
+            git push origin main
+            echo "✅ 已成功提交并推送 shadowsocks-libev 更新"
+          else
+            echo "没有检测到 shadowsocks-libev 文件变更"
           fi
