@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       plugins:
-        description: '插件名，默认编译 shadowsocks-libev 全部组件'
+        description: '插件名，默认编译 shadowsocks-libev 目录下全部组件'
         required: false
-        default: 'shadowsocks-libev-ss-local shadowsocks-libev-ss-server shadowsocks-libev-ss-redir shadowsocks-libev-ss-tunnel'
+        default: 'shadowsocks-libev'
 
 jobs:
   build:
@@ -41,7 +41,7 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
           FEEDNAME: packages_ci
-          PACKAGES: ${{ github.event.inputs.plugins || 'shadowsocks-libev-ss-local shadowsocks-libev-ss-server shadowsocks-libev-ss-redir shadowsocks-libev-ss-tunnel' }}
+          PACKAGES: ${{ github.event.inputs.plugins || 'shadowsocks-libev' }}
           NO_REFRESH_CHECK: true
           IGNORE_ERRORS: false
 
