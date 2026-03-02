@@ -142,6 +142,11 @@ jobs:
           NEED="false"
           REASON=""
 
+          if [ "${{ github.event.inputs.force_rehash }}" = "true" ]; then
+            NEED="true"
+            REASON="force rehash"
+          fi
+
           if [ "${{ steps.oldver.outputs.old_ver }}" != "${{ steps.newver.outputs.new_ver }}" ]; then
             NEED="true"
             REASON="new version"
