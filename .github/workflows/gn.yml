@@ -86,6 +86,10 @@ jobs:
           ./scripts/feeds update gn_hash
           ./scripts/feeds install -p gn_hash gn
 
+          export TERM=xterm
+          [ -f .config ] || touch .config
+          make defconfig > /dev/null
+
           set +e
           make package/feeds/gn_hash/gn/check V=s > "$WORK_DIR/gn_make_check.log" 2>&1
           MAKE_RC=$?
