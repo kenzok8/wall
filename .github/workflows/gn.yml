@@ -155,9 +155,8 @@ jobs:
             [ -z "$REASON" ] && REASON="new source date"
           fi
 
-          if [ "${{ steps.oldver.outputs.old_hash }}" != "${{ steps.pack.outputs.pkg_hash }}" ]; then
-            NEED="true"
-            [ -z "$REASON" ] && REASON="hash changed"
+          if [ "$NEED" = "true" ] && [ "${{ steps.oldver.outputs.old_hash }}" != "${{ steps.pack.outputs.pkg_hash }}" ]; then
+            [ -z "$REASON" ] && REASON="hash changed with new source"
           fi
 
           echo "need=$NEED" >> $GITHUB_OUTPUT
