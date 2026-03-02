@@ -50,7 +50,7 @@ jobs:
       - name: Clone and package gn
         id: pack
         run: |
-          mkdir -p ~/pack && cd ~/pack
+          cd "$GITHUB_WORKSPACE"
           cat > calc_gn_hash.sh <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
@@ -102,11 +102,11 @@ jobs:
           EOF
           chmod +x calc_gn_hash.sh
 
-          docker run --rm --user root -v "$HOME/pack:/work" ghcr.io/openwrt/sdk:x86_64-24.10.2 /bin/bash -lc "cd /work && ./calc_gn_hash.sh '${{ steps.newver.outputs.new_ver }}' '${{ steps.newver.outputs.short_ver }}'"
+          docker run --rm --user root -v "$GITHUB_WORKSPACE:/work" ghcr.io/openwrt/sdk:x86_64-24.10.2 /bin/bash -lc "cd /work && ./calc_gn_hash.sh '${{ steps.newver.outputs.new_ver }}' '${{ steps.newver.outputs.short_ver }}'"
 
-          PKG_HASH=$(cat hash.txt)
-          NEW_DATE=$(cat new_date.txt)
-          COMMIT_POSITION=$(cat commit_position.txt)
+          PKG_HASH=$(cat "$GITHUB_WORKSPACE/hash.txt")
+          NEW_DATE=$(cat "$GITHUB_WORKSPACE/new_date.txt")
+          COMMIT_POSITION=$(cat "$GITHUB_WORKSPACE/commit_position.txt")
           DIR_DATE=${NEW_DATE//-/.}
           TAR_NAME="gn-${DIR_DATE}~${{ steps.newver.outputs.short_ver }}.tar.zst"
 
