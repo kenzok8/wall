@@ -321,9 +321,10 @@ jobs:
             hash_line: 13
             version_head: PKG_VERSION:=
             hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/teddysun/xray-plugin/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+            release_api_command: curl -fsSL "https://api.github.com/repos/teddysun/xray-plugin/releases/latest" | grep '"tag_name"' | head -n 1 | awk -F '"' '{print $4}' | sed 's/^v//'
             release_download_url: https://codeload.github.com/teddysun/xray-plugin/tar.gz/v
-            file_name: 
+            file_name:
+            check_hash_when_same_version: true
 
           - pakcages: v2ray-geoip
             folder: v2ray-geodata
@@ -384,18 +385,51 @@ jobs:
           if [ "$is_continue" = "true" ]; then
             cd $GITHUB_WORKSPACE/${{ matrix.folder }} 
             Old_PKG_VERSION=$(sed -n '${{ matrix.version_line }}p' Makefile | awk -F '=' '{print $2}')
+            Old_PKG_HASH=$(sed -n '${{ matrix.hash_line }}p' Makefile | awk -F '=' '{print $2}')
+            Check_Hash_When_Same_Version=${{ matrix.check_hash_when_same_version }}
+            if [ -z "$Check_Hash_When_Same_Version" ]; then
+              Check_Hash_When_Same_Version=true
+            fi
             New_PKG_VERSION=$(${{ matrix.release_api_command }})
             echo "${{ matrix.pakcages }} 当前版本: $Old_PKG_VERSION"
             echo "${{ matrix.pakcages }} 最新版本: $New_PKG_VERSION"
-            if [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then 
-              echo "status=failure" >> $GITHUB_OUTPUT; 
-              echo "${{ matrix.pakcages }} 版本为最新版本 $New_PKG_VERSION，无需更新"; 
-            else 
-              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;  
+            if [ -z "$New_PKG_VERSION" ]; then
+              echo "status=failure" >> $GITHUB_OUTPUT;
+              echo "${{ matrix.pakcages }} 未能获取到上游版本号，跳过更新（回退保护）";
+            elif [ "$Old_PKG_VERSION" = "$New_PKG_VERSION" ]; then
+              if [ "$Check_Hash_When_Same_Version" = "true" ]; then
+                echo "${{ matrix.pakcages }} 版本号相同，开始校验源码哈希..."
+                mkdir -p ~/main/${{ matrix.pakcages }}-check
+                cd ~/main/${{ matrix.pakcages }}-check
+                rm -f source.pkg
+
+                if curl -fsSL "${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}" -o source.pkg; then
+                  New_PKG_HASH=$(sha256sum source.pkg | awk '{print $1}')
+                  echo "${{ matrix.pakcages }} 当前哈希: $Old_PKG_HASH"
+                  echo "${{ matrix.pakcages }} 最新哈希: $New_PKG_HASH"
+
+                  if [ "$Old_PKG_HASH" = "$New_PKG_HASH" ]; then
+                    echo "status=failure" >> $GITHUB_OUTPUT;
+                    echo "${{ matrix.pakcages }} 版本和哈希均未变化，无需更新";
+                  else
+                    echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;
+                    echo "status=success" >> $GITHUB_OUTPUT;
+                    echo "${{ matrix.pakcages }} 检测到同版本源码变更，执行更新";
+                  fi
+                else
+                  echo "status=failure" >> $GITHUB_OUTPUT;
+                  echo "${{ matrix.pakcages }} 哈希探测失败，跳过更新（回退保护）";
+                fi
+              else
+                echo "status=failure" >> $GITHUB_OUTPUT;
+                echo "${{ matrix.pakcages }} 版本为最新版本 $New_PKG_VERSION，无需更新";
+              fi
+            else
+              echo "New_PKG_VERSION=$New_PKG_VERSION" >> $GITHUB_OUTPUT;
               echo "status=success" >> $GITHUB_OUTPUT;
             fi
           else
-            echo "status=failure" >> $GITHUB_OUTPUT;
+              echo "status=failure" >> $GITHUB_OUTPUT; 
           fi
 
       - name: Update ${{ matrix.pakcages }}
@@ -403,24 +437,30 @@ jobs:
         if: steps.check.outputs.status == 'success' && steps.check.outputs.New_PKG_VERSION != '' && !cancelled()
         run: |
           cd $GITHUB_WORKSPACE/${{ matrix.folder }}
+          cp Makefile Makefile.bak
+
+          rollback_makefile() {
+            echo "更新失败，回退 Makefile 到更新前状态"
+            cp Makefile.bak Makefile || true
+          }
+
+          trap rollback_makefile ERR
+
           New_PKG_VERSION=${{ steps.check.outputs.New_PKG_VERSION }}
           sed -i "${{ matrix.version_line }}c ${{ matrix.version_head }}$New_PKG_VERSION" Makefile
           
           mkdir -p ~/main/${{ matrix.pakcages }}
           cd ~/main/${{ matrix.pakcages }}
+          rm -f source.pkg
           
-          wget -P ./ ${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}
-          
-          file_name="${{ matrix.file_name }}"
-          is_v=$(echo ${{ matrix.release_download_url }} | awk -F/ '{print $NF}')
-          if [ ! -n "${{ matrix.file_name }}" ]; then 
-            PKG_HASH=$(sha256sum $is_v$New_PKG_VERSION | awk '{print $1}')
-          else 
-            PKG_HASH=$(sha256sum ${file_name##*/} | awk '{print $1}')
-          fi
+          curl -fsSL "${{ matrix.release_download_url }}$New_PKG_VERSION${{ matrix.file_name }}" -o source.pkg
+          PKG_HASH=$(sha256sum source.pkg | awk '{print $1}')
           
           cd $GITHUB_WORKSPACE/${{ matrix.folder }}
           sed -i "${{ matrix.hash_line }}c ${{ matrix.hash_head }}$PKG_HASH" Makefile
+
+          trap - ERR
+          rm -f Makefile.bak
           
           echo "已更新 ${{ matrix.pakcages }} 版本到: $New_PKG_VERSION"
           echo "${{ matrix.pakcages }} Hash: $PKG_HASH"
