@@ -56,73 +56,49 @@ jobs:
           set -euo pipefail
           COMMIT="$1"
           SHORT_VER="$2"
-          BASE_DIR="$(pwd)"
+          WORK_DIR="/work"
+          PKG_MAKEFILE="$WORK_DIR/gn/Makefile"
+          TMP_SRC="/tmp/gn-src"
 
-          build_pkg() {
-            local workdir="$1"
-            local hash_file="$2"
+          rm -rf "$TMP_SRC" "$WORK_DIR/hash.txt" "$WORK_DIR/new_date.txt" "$WORK_DIR/commit_position.txt" "$WORK_DIR/make_check.log"
 
-            rm -rf "$workdir"
-            mkdir -p "$workdir"
-            cd "$workdir"
+          git clone https://gn.googlesource.com/gn.git "$TMP_SRC"
+          cd "$TMP_SRC"
+          git checkout "$COMMIT"
+          NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
+          COMMIT_POSITION=$(git rev-list --count HEAD)
+          cd /
 
-            NEW_DATE=$(git show -s --date=format:%Y-%m-%d --format=%cd "$COMMIT" 2>/dev/null || true)
-            if [ -z "$NEW_DATE" ]; then
-              git clone https://gn.googlesource.com/gn.git gn-tmp
-              cd gn-tmp
-              git checkout "$COMMIT"
-              NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
-              cd ..
-              rm -rf gn-tmp
+          cp "$PKG_MAKEFILE" "$WORK_DIR/gn/Makefile.bak"
+          trap 'cp "$WORK_DIR/gn/Makefile.bak" "$PKG_MAKEFILE" >/dev/null 2>&1 || true; rm -f "$WORK_DIR/gn/Makefile.bak"' EXIT
+
+          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$NEW_DATE" "$PKG_MAKEFILE"
+          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=$COMMIT" "$PKG_MAKEFILE"
+          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=0000000000000000000000000000000000000000000000000000000000000000" "$PKG_MAKEFILE"
+
+          cd /builder
+          grep -q '^src-link packages_ci /work$' feeds.conf.default || echo 'src-link packages_ci /work' >> feeds.conf.default
+          ./scripts/feeds update packages_ci
+          ./scripts/feeds install -p packages_ci gn
+
+          set +e
+          make package/feeds/packages_ci/gn/check V=s > "$WORK_DIR/make_check.log" 2>&1
+          MAKE_RC=$?
+          set -e
+
+          REAL_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/make_check.log" | awk '{print $2}' | tail -n1)
+          if [ -z "$REAL_HASH" ]; then
+            if [ "$MAKE_RC" -ne 0 ]; then
+              echo "未能从 make check 日志提取 gn 哈希"
+              cat "$WORK_DIR/make_check.log"
+              exit 1
             fi
-
-            DIR_DATE=${NEW_DATE//-/.}
-            DIR_NAME="gn-${DIR_DATE}~${SHORT_VER}"
-            TAR_NAME="${DIR_NAME}.tar.zst"
-
-            git clone https://gn.googlesource.com/gn.git "$DIR_NAME"
-            cd "$DIR_NAME"
-            git checkout "$COMMIT"
-            COMMIT_POSITION=$(git rev-list --count HEAD)
-            TAR_TIMESTAMP=$(git log -1 --format='@%ct')
-            cd ..
-
-            echo "Generating formal git archive (OpenWrt-compatible)..."
-            (cd "$DIR_NAME" && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
-            tar --ignore-failed-read -C "$DIR_NAME" -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null
-
-            rm -rf "$DIR_NAME"
-            mkdir "$DIR_NAME"
-            tar -C "$DIR_NAME" -xf "${DIR_NAME}.tar.git"
-            (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules)
-
-            tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$TAR_NAME"
-            sha256sum "$TAR_NAME" | awk '{print $1}' > "$hash_file"
-
-            echo "$NEW_DATE" > "$BASE_DIR/new_date.txt"
-            echo "$COMMIT_POSITION" > "$BASE_DIR/commit_position.txt"
-            echo "$TAR_NAME" > "$BASE_DIR/tar_name.txt"
-          }
-
-          rm -rf run_a run_b hash_a.txt hash_b.txt hash.txt new_date.txt commit_position.txt tar_name.txt
-          build_pkg "$BASE_DIR/run_a" "$BASE_DIR/hash_a.txt"
-          build_pkg "$BASE_DIR/run_b" "$BASE_DIR/hash_b.txt"
-
-          HASH_A=$(cat "$BASE_DIR/hash_a.txt")
-          HASH_B=$(cat "$BASE_DIR/hash_b.txt")
-          if [ -z "$HASH_A" ] || [ -z "$HASH_B" ]; then
-            echo "hash 计算失败：结果为空"
-            exit 1
+            REAL_HASH=$(sed -n '/^PKG_MIRROR_HASH:=/p' "$PKG_MAKEFILE" | awk -F '=' '{print $2}')
           fi
 
-          if [ "$HASH_A" != "$HASH_B" ]; then
-            echo "hash 计算不稳定：两次结果不一致"
-            echo "HASH_A=$HASH_A"
-            echo "HASH_B=$HASH_B"
-            exit 1
-          fi
-
-          echo "$HASH_A" > "$BASE_DIR/hash.txt"
+          echo "$REAL_HASH" > "$WORK_DIR/hash.txt"
+          echo "$NEW_DATE" > "$WORK_DIR/new_date.txt"
+          echo "$COMMIT_POSITION" > "$WORK_DIR/commit_position.txt"
           EOF
           chmod +x calc_gn_hash.sh
 
