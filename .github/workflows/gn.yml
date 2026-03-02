@@ -95,7 +95,18 @@ jobs:
           MAKE_RC=$?
           set -e
 
-          REAL_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/gn_make_check.log" | awk '{print $2}' | tail -n1 || true)
+          ARCHIVE_NAME="gn-${NEW_DATE//-/.}~${SHORT_VER}.tar.zst"
+          ARCHIVE_PATH="$SDK_DIR/dl/$ARCHIVE_NAME"
+
+          REAL_HASH=""
+          if [ -f "$ARCHIVE_PATH" ]; then
+            REAL_HASH=$(sha256sum "$ARCHIVE_PATH" | awk '{print $1}')
+          fi
+
+          if [ -z "$REAL_HASH" ]; then
+            REAL_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/gn_make_check.log" | awk '{print $2}' | tail -n1 || true)
+          fi
+
           if [ -z "$REAL_HASH" ]; then
             echo "未能从 make check 日志提取 gn hash"
             cat "$WORK_DIR/gn_make_check.log"
