@@ -78,7 +78,7 @@ jobs:
 
           cd /builder
           grep -q '^src-link packages_ci /work$' feeds.conf.default || echo 'src-link packages_ci /work' >> feeds.conf.default
-          ./scripts/feeds update packages_ci
+          ./scripts/feeds update -a
           ./scripts/feeds install -p packages_ci gn
 
           set +e
@@ -86,7 +86,7 @@ jobs:
           MAKE_RC=$?
           set -e
 
-          REAL_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/make_check.log" | awk '{print $2}' | tail -n1)
+          REAL_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/make_check.log" | awk '{print $2}' | tail -n1 || true)
           if [ -z "$REAL_HASH" ]; then
             if [ "$MAKE_RC" -ne 0 ]; then
               echo "未能从 make check 日志提取 gn 哈希"
