@@ -91,7 +91,7 @@ jobs:
           make defconfig > /dev/null
 
           set +e
-          make package/feeds/gn_hash/gn/check V=s > "$WORK_DIR/gn_make_check.log" 2>&1
+          make package/feeds/gn_hash/gn/download V=s > "$WORK_DIR/gn_make_check.log" 2>&1
           MAKE_RC=$?
           set -e
 
