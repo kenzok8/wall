@@ -66,23 +66,32 @@ jobs:
             mkdir -p "$workdir"
             cd "$workdir"
 
-            git clone https://gn.googlesource.com/gn.git gn-source
-            cd gn-source
-            git checkout "$COMMIT"
-            NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
-            COMMIT_POSITION=$(git rev-list --count HEAD)
-            TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
-            cd ..
+            NEW_DATE=$(git show -s --date=format:%Y-%m-%d --format=%cd "$COMMIT" 2>/dev/null || true)
+            if [ -z "$NEW_DATE" ]; then
+              git clone https://gn.googlesource.com/gn.git gn-tmp
+              cd gn-tmp
+              git checkout "$COMMIT"
+              NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
+              cd ..
+              rm -rf gn-tmp
+            fi
 
             DIR_DATE=${NEW_DATE//-/.}
             DIR_NAME="gn-${DIR_DATE}~${SHORT_VER}"
             TAR_NAME="${DIR_NAME}.tar.zst"
 
-            echo "Generating formal git archive (OpenWrt-compatible)..."
-            (cd gn-source && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
-            tar --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null
+            git clone https://gn.googlesource.com/gn.git "$DIR_NAME"
+            cd "$DIR_NAME"
+            git checkout "$COMMIT"
+            COMMIT_POSITION=$(git rev-list --count HEAD)
+            TAR_TIMESTAMP=$(git log -1 --format='@%ct')
+            cd ..
 
-            rm -rf gn-source
+            echo "Generating formal git archive (OpenWrt-compatible)..."
+            (cd "$DIR_NAME" && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
+            tar --ignore-failed-read -C "$DIR_NAME" -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null
+
+            rm -rf "$DIR_NAME"
             mkdir "$DIR_NAME"
             tar -C "$DIR_NAME" -xf "${DIR_NAME}.tar.git"
             (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules)
