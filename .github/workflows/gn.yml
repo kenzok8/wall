@@ -56,32 +56,64 @@ jobs:
           set -euo pipefail
           COMMIT="$1"
           SHORT_VER="$2"
+          BASE_DIR="$(pwd)"
 
-          rm -rf gn-source *.tar.git *.tar.zst gn-*~* hash.txt new_date.txt commit_position.txt
-          git clone https://gn.googlesource.com/gn.git gn-source
-          cd gn-source
-          git checkout "$COMMIT"
-          NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
-          COMMIT_POSITION=$(git rev-list --count HEAD)
-          TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
-          cd ..
+          build_pkg() {
+            local workdir="$1"
+            local hash_file="$2"
 
-          DIR_DATE=${NEW_DATE//-/.}
-          DIR_NAME="gn-${DIR_DATE}~${SHORT_VER}"
-          TAR_NAME="${DIR_NAME}.tar.zst"
+            rm -rf "$workdir"
+            mkdir -p "$workdir"
+            cd "$workdir"
 
-          (cd gn-source && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
-          tar --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null
+            git clone https://gn.googlesource.com/gn.git gn-source
+            cd gn-source
+            git checkout "$COMMIT"
+            NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
+            COMMIT_POSITION=$(git rev-list --count HEAD)
+            TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
+            cd ..
 
-          rm -rf gn-source
-          mkdir "$DIR_NAME"
-          tar -C "$DIR_NAME" -xf "${DIR_NAME}.tar.git"
-          (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules)
+            DIR_DATE=${NEW_DATE//-/.}
+            DIR_NAME="gn-${DIR_DATE}~${SHORT_VER}"
+            TAR_NAME="${DIR_NAME}.tar.zst"
 
-          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$TAR_NAME"
-          sha256sum "$TAR_NAME" | awk '{print $1}' > hash.txt
-          echo "$NEW_DATE" > new_date.txt
-          echo "$COMMIT_POSITION" > commit_position.txt
+            echo "Generating formal git archive (OpenWrt-compatible)..."
+            (cd gn-source && git config core.abbrev 8 && git archive --format=tar HEAD --output="../${DIR_NAME}.tar.git")
+            tar --ignore-failed-read -C gn-source -f "${DIR_NAME}.tar.git" -r .git .gitmodules 2>/dev/null
+
+            rm -rf gn-source
+            mkdir "$DIR_NAME"
+            tar -C "$DIR_NAME" -xf "${DIR_NAME}.tar.git"
+            (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules)
+
+            tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$TAR_NAME"
+            sha256sum "$TAR_NAME" | awk '{print $1}' > "$hash_file"
+
+            echo "$NEW_DATE" > "$BASE_DIR/new_date.txt"
+            echo "$COMMIT_POSITION" > "$BASE_DIR/commit_position.txt"
+            echo "$TAR_NAME" > "$BASE_DIR/tar_name.txt"
+          }
+
+          rm -rf run_a run_b hash_a.txt hash_b.txt hash.txt new_date.txt commit_position.txt tar_name.txt
+          build_pkg "$BASE_DIR/run_a" "$BASE_DIR/hash_a.txt"
+          build_pkg "$BASE_DIR/run_b" "$BASE_DIR/hash_b.txt"
+
+          HASH_A=$(cat "$BASE_DIR/hash_a.txt")
+          HASH_B=$(cat "$BASE_DIR/hash_b.txt")
+          if [ -z "$HASH_A" ] || [ -z "$HASH_B" ]; then
+            echo "hash 计算失败：结果为空"
+            exit 1
+          fi
+
+          if [ "$HASH_A" != "$HASH_B" ]; then
+            echo "hash 计算不稳定：两次结果不一致"
+            echo "HASH_A=$HASH_A"
+            echo "HASH_B=$HASH_B"
+            exit 1
+          fi
+
+          echo "$HASH_A" > "$BASE_DIR/hash.txt"
           EOF
           chmod +x calc_gn_hash.sh
 
