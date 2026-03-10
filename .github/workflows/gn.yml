@@ -96,7 +96,8 @@ jobs:
           make defconfig > /dev/null
 
           set +e
-          make package/feeds/gn_hash/gn/download V=s > "$WORK_DIR/gn_make_check.log" 2>&1
+          # 关键：禁用镜像下载，强制走源码打包路径，避免拿到历史镜像包的旧 hash
+          make package/feeds/gn_hash/gn/download V=s DOWNLOAD_MIRROR=0 > "$WORK_DIR/gn_make_check.log" 2>&1
           MAKE_RC=$?
           set -e
 
@@ -126,7 +127,7 @@ jobs:
           # 防止 hash 计算来源与后续编译环境不一致
           sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$REAL_HASH" "$TEMP_MAKEFILE"
           set +e
-          make package/feeds/gn_hash/gn/check V=s > "$WORK_DIR/gn_make_verify.log" 2>&1
+          make package/feeds/gn_hash/gn/check V=s DOWNLOAD_MIRROR=0 > "$WORK_DIR/gn_make_verify.log" 2>&1
           VERIFY_RC=$?
           set -e
 
@@ -136,7 +137,7 @@ jobs:
               echo "二次校验发现更准确 hash: $ALT_HASH (old: $REAL_HASH)"
               REAL_HASH="$ALT_HASH"
               sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$REAL_HASH" "$TEMP_MAKEFILE"
-              make package/feeds/gn_hash/gn/check V=s > /dev/null
+              make package/feeds/gn_hash/gn/check V=s DOWNLOAD_MIRROR=0 > /dev/null
             else
               echo "二次校验失败，且未提取到替代 hash"
               cat "$WORK_DIR/gn_make_verify.log"
