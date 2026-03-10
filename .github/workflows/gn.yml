@@ -82,6 +82,11 @@ jobs:
           sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=0000000000000000000000000000000000000000000000000000000000000000" "$TEMP_MAKEFILE"
 
           cd "$SDK_DIR"
+
+          # 防止 SDK 镜像内置/残留 dl 缓存导致 hash 计算偏差
+          # 必须清理 gn 源码包后再让 OpenWrt 下载流程重新生成 tar.zst
+          rm -f "$SDK_DIR"/dl/gn-*.tar.zst "$SDK_DIR"/dl/gn-*.tar.zst.* || true
+
           grep -q '^src-link gn_hash /work/.gn-hash-feed$' feeds.conf.default || echo 'src-link gn_hash /work/.gn-hash-feed' >> feeds.conf.default
           ./scripts/feeds update gn_hash
           ./scripts/feeds install -p gn_hash gn
