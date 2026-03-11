@@ -199,9 +199,7 @@ jobs:
           cd $GITHUB_WORKSPACE/gn
           sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=${{ steps.newver.outputs.new_ver }}" Makefile
           sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.pack.outputs.new_date }}" Makefile
-          # gn 源码打包在不同 SDK 环境下可能产生不同 tar hash（历史上导致反复误判）
-          # 固定为 skip，避免跨环境 hash 抖动导致编译失败
-          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=skip" Makefile
+          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=${{ steps.pack.outputs.pkg_hash }}" Makefile
 
       - name: Update last_commit_position.h
         if: steps.need_update.outputs.need == 'true'
