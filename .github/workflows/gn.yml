@@ -104,27 +104,22 @@ jobs:
           ARCHIVE_NAME="gn-${NEW_DATE//-/.}~${SHORT_VER}.tar.zst"
           ARCHIVE_PATH="$SDK_DIR/dl/$ARCHIVE_NAME"
 
-          REAL_HASH=""
-          if [ -f "$ARCHIVE_PATH" ]; then
-            REAL_HASH=$(sha256sum "$ARCHIVE_PATH" | awk '{print $1}')
-          fi
-
-          if [ -z "$REAL_HASH" ]; then
-            REAL_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/gn_make_check.log" | awk '{print $2}' | tail -n1 || true)
-          fi
-
-          if [ -z "$REAL_HASH" ]; then
-            echo "未能从 make check 日志提取 gn hash"
+          if [ ! -f "$ARCHIVE_PATH" ]; then
+            echo "未生成预期源码包: $ARCHIVE_PATH"
             cat "$WORK_DIR/gn_make_check.log"
             exit 1
           fi
 
+          REAL_HASH=$(sha256sum "$ARCHIVE_PATH" | awk '{print $1}')
+
           if [ "$MAKE_RC" -ne 0 ]; then
-            echo "检测阶段 make 返回非零，但已成功提取 hash: $REAL_HASH"
+            echo "下载/打包阶段返回非零，终止提交；日志如下："
+            cat "$WORK_DIR/gn_make_check.log"
+            exit 1
           fi
 
           # 二次校验：把计算出的 hash 写回临时 Makefile，再执行 check
-          # 防止 hash 计算来源与后续编译环境不一致
+          # 只接受“严格通过”，不再从日志猜测替代 hash
           sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$REAL_HASH" "$TEMP_MAKEFILE"
           set +e
           make package/feeds/gn_hash/gn/check V=s DOWNLOAD_MIRROR=0 > "$WORK_DIR/gn_make_verify.log" 2>&1
@@ -132,17 +127,9 @@ jobs:
           set -e
 
           if [ "$VERIFY_RC" -ne 0 ]; then
-            ALT_HASH=$(grep -oE 'hash [0-9a-f]{64}' "$WORK_DIR/gn_make_verify.log" | awk '{print $2}' | tail -n1 || true)
-            if [ -n "$ALT_HASH" ] && [ "$ALT_HASH" != "$REAL_HASH" ]; then
-              echo "二次校验发现更准确 hash: $ALT_HASH (old: $REAL_HASH)"
-              REAL_HASH="$ALT_HASH"
-              sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$REAL_HASH" "$TEMP_MAKEFILE"
-              make package/feeds/gn_hash/gn/check V=s DOWNLOAD_MIRROR=0 > /dev/null
-            else
-              echo "二次校验失败，且未提取到替代 hash"
-              cat "$WORK_DIR/gn_make_verify.log"
-              exit 1
-            fi
+            echo "二次校验失败，停止提交（避免写入错误 hash）"
+            cat "$WORK_DIR/gn_make_verify.log"
+            exit 1
           fi
 
           echo "$REAL_HASH" > "$WORK_DIR/hash.txt"
