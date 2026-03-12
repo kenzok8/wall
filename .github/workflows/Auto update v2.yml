@@ -27,6 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: 'main'
+          token: ${{ secrets.ACCESS_TOKEN }}
 
       - name: Initialization environment
         run: |
@@ -52,7 +53,7 @@ jobs:
     name: Auto-update-${{ matrix.pakcages }} 
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 4
       matrix:
         pakcages: [dns2tcp,ddns-go,dns2socks-rust,docker,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,upx,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
         include:
@@ -372,6 +373,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: 'main'
+          token: ${{ secrets.ACCESS_TOKEN }}
 
       - name: Initialization environment
         run: |
@@ -515,6 +517,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: 'main'
+          token: ${{ secrets.ACCESS_TOKEN }}
 
       - name: Initialization environment
         run: |
