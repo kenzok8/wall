@@ -33,7 +33,7 @@ jobs:
 
           sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VER}/" v2dat/Makefile
           sed -i "s#^PKG_SOURCE_URL:=.*#PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/v2dat/tar.gz/refs/tags/#" v2dat/Makefile
-          sed -i "s/^PKG_SOURCE_VERSION:=.*/PKG_SOURCE_VERSION:=v$(PKG_VERSION)/" v2dat/Makefile
+          sed -i "s/^PKG_SOURCE_VERSION:=.*/PKG_SOURCE_VERSION:=v\$(PKG_VERSION)/" v2dat/Makefile
           sed -i "s/^PKG_HASH:=.*/PKG_HASH:=${HASH}/" v2dat/Makefile
           sed -i "s#^GO_PKG:=.*#GO_PKG:=github.com/kenzok8/v2dat#" v2dat/Makefile
           sed -i "s#^  URL:=.*#  URL:=https://github.com/kenzok8/v2dat#" v2dat/Makefile
