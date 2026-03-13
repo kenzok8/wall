@@ -1,0 +1,52 @@
+name: v2dat sync from fork
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 2 * * 2,5'  # 每周二/五 10:40 Asia/Shanghai
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update v2dat Makefile from latest tag
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          REPO: kenzok8/v2dat
+        run: |
+          set -euo pipefail
+          TAG=$(gh release list --repo "$REPO" --limit 1 --json tagName --jq '.[0].tagName')
+          VER=${TAG#v}
+          URL="https://codeload.github.com/kenzok8/v2dat/tar.gz/refs/tags/${TAG}"
+          curl -fL -o /tmp/v2dat.tar.gz "$URL"
+          HASH=$(sha256sum /tmp/v2dat.tar.gz | awk '{print $1}')
+
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VER}/" v2dat/Makefile
+          sed -i "s#^PKG_SOURCE_URL:=.*#PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/v2dat/tar.gz/refs/tags/#" v2dat/Makefile
+          sed -i "s/^PKG_SOURCE_VERSION:=.*/PKG_SOURCE_VERSION:=v$(PKG_VERSION)/" v2dat/Makefile
+          sed -i "s/^PKG_HASH:=.*/PKG_HASH:=${HASH}/" v2dat/Makefile
+          sed -i "s#^GO_PKG:=.*#GO_PKG:=github.com/kenzok8/v2dat#" v2dat/Makefile
+          sed -i "s#^  URL:=.*#  URL:=https://github.com/kenzok8/v2dat#" v2dat/Makefile
+
+      - name: Commit and push when changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No v2dat update needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add v2dat/Makefile
+          git commit -m "v2dat: sync to latest kenzok8/v2dat release"
+          git push
