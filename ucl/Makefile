@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ucl
 PKG_VERSION:=1.03
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_MAINTAINER:=Xingwang Liao <kuoruan@gmail.com>
 PKG_LICENSE:=GPL-2.0-only
@@ -16,7 +16,7 @@ PKG_LICENSE_FILES:=COPYING
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/ucl/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=3499f222e31220c5b88ee433b321c50b29f1fd793ee3b95b58d1a257c8426c1c
+PKG_HASH:=9d7fc65897836fbde09e0380905c3aabb74ea10a6599c1bf979c6f42fd30276c
 
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1
