@@ -1,4 +1,4 @@
-name: upx-static sync from upstream
+name: upx packages sync from upstream
 
 on:
   workflow_dispatch:
@@ -27,26 +27,51 @@ jobs:
           set -euo pipefail
           TAG=$(gh release list --repo upx/upx --limit 1 --json tagName --jq '.[0].tagName')
           VER=${TAG#v}
-          CURRENT=$(grep "^PKG_VERSION:=" upx-static/Makefile | cut -d= -f2)
+          CURRENT=$(grep "^PKG_VERSION:=" upx/Makefile | cut -d= -f2)
           echo "upstream=$VER" >> "$GITHUB_OUTPUT"
           echo "current=$CURRENT"  >> "$GITHUB_OUTPUT"
           if [ "$VER" = "$CURRENT" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "upx-static already at $VER, nothing to do"
+            echo "Both upx packages already at $VER, nothing to do"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Update available: $CURRENT → $VER"
           fi
 
-      - name: Update upx-static/Makefile
+      - name: Compute source tarball hash (for upx)
+        id: hash
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          VER="${{ steps.check.outputs.upstream }}"
+          URL="https://github.com/upx/upx/releases/download/v${VER}/upx-${VER}-src.tar.xz"
+          echo "Downloading $URL"
+          curl -fL -o /tmp/upx-src.tar.xz "$URL"
+          HASH=$(sha256sum /tmp/upx-src.tar.xz | awk '{print $1}')
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          echo "Hash: $HASH"
+
+      - name: Update upx/Makefile (source build, with hash)
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          VER="${{ steps.check.outputs.upstream }}"
+          HASH="${{ steps.hash.outputs.hash }}"
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VER}/" upx/Makefile
+          sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=1/" upx/Makefile
+          sed -i "s/^PKG_HASH:=.*/PKG_HASH:=${HASH}/" upx/Makefile
+          echo "upx/Makefile updated:"
+          grep -E "^PKG_(VERSION|RELEASE|HASH)" upx/Makefile
+
+      - name: Update upx-static/Makefile (pre-built binary, no hash)
         if: steps.check.outputs.changed == 'true'
         run: |
           set -euo pipefail
           VER="${{ steps.check.outputs.upstream }}"
           sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VER}/" upx-static/Makefile
           sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=1/" upx-static/Makefile
-          echo "Updated PKG_VERSION to ${VER}"
-          grep "^PKG_VERSION" upx-static/Makefile
+          echo "upx-static/Makefile updated:"
+          grep -E "^PKG_(VERSION|RELEASE)" upx-static/Makefile
 
       - name: Commit and push
         if: steps.check.outputs.changed == 'true'
@@ -54,6 +79,6 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add upx-static/Makefile
-          git commit -m "upx-static: sync to upstream v${{ steps.check.outputs.upstream }}"
+          git add upx/Makefile upx-static/Makefile
+          git commit -m "upx: sync both packages to upstream v${{ steps.check.outputs.upstream }}"
           git push
