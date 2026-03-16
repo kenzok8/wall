@@ -1,0 +1,59 @@
+name: upx-static sync from upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday 10:00 Asia/Shanghai
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check latest UPX release
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG=$(gh release list --repo upx/upx --limit 1 --json tagName --jq '.[0].tagName')
+          VER=${TAG#v}
+          CURRENT=$(grep "^PKG_VERSION:=" upx-static/Makefile | cut -d= -f2)
+          echo "upstream=$VER" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT"  >> "$GITHUB_OUTPUT"
+          if [ "$VER" = "$CURRENT" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "upx-static already at $VER, nothing to do"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Update available: $CURRENT → $VER"
+          fi
+
+      - name: Update upx-static/Makefile
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          VER="${{ steps.check.outputs.upstream }}"
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VER}/" upx-static/Makefile
+          sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=1/" upx-static/Makefile
+          echo "Updated PKG_VERSION to ${VER}"
+          grep "^PKG_VERSION" upx-static/Makefile
+
+      - name: Commit and push
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add upx-static/Makefile
+          git commit -m "upx-static: sync to upstream v${{ steps.check.outputs.upstream }}"
+          git push
