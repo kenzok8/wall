@@ -57,7 +57,7 @@ endef
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	tar -xJf $(DL_DIR)/$(PKG_SOURCE) -C $(PKG_BUILD_DIR)
+	tar -xJf $(DL_DIR)/$(PKG_SOURCE) -C $(PKG_BUILD_DIR) --strip-components=1
 endef
 
 define Build/Compile
@@ -65,7 +65,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/bin
-	$(INSTALL_BIN) 		$(PKG_BUILD_DIR)/upx-$(PKG_VERSION)-$(UPX_ARCH)_linux/upx 		$(1)/bin/upx
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/upx $(1)/bin/upx
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
