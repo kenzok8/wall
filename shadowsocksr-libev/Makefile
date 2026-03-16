@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=shadowsocksr-libev
-PKG_VERSION:=2.5.7
+PKG_VERSION:=2.5.8
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=59146a54db29ed3fd4cc6a03ac8611e24d115e0aff4b0840b2e90fa9c76ab034
+PKG_HASH:=22dc6df12a60425fbae24f39d35c4068c212725608647a331a56d2012cefe970
 
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=LICENSE
