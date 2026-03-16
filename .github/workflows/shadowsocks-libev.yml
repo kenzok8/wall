@@ -25,12 +25,12 @@ jobs:
           - aarch64_cortex-a53
 
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@main
+        uses: Mattraks/delete-workflow-runs@v2.1.0
         continue-on-error: true
         with:
           retain_days: 2
@@ -60,7 +60,7 @@ jobs:
 
       - name: Store packages
         if: steps.detect_ipk.outputs.has_ipk == 'true'
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v4
         with:
           name: shadowsocks-libev-${{ matrix.arch }}-${{ matrix.sdk }}
           path: bin/packages/${{ matrix.arch }}/packages_ci/*.ipk
