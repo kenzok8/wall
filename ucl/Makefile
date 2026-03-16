@@ -18,11 +18,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/ucl/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=5c83ec6253a2ace943921e3ea4947d388f0a1789bc52e3bebd356e62751221e9
 
-PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
-HOST_FIXUP:=autoreconf
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
