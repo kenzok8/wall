@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=upx-static
-PKG_VERSION:=4.2.4
+PKG_VERSION:=5.1.1
 PKG_RELEASE:=1
 
 ifeq ($(ARCH),x86_64)
@@ -32,6 +32,9 @@ ifeq ($(ARCH),powerpc)
 endif
 ifeq ($(ARCH),powerpc64)
 	PKG_ARCH:=powerpc64le
+endif
+ifeq ($(ARCH),riscv64)
+	PKG_ARCH:=riscv64
 endif
 
 PKG_FILE:=upx-$(PKG_VERSION).tar.xz
