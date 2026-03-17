@@ -11,7 +11,7 @@ PKG_VERSION:=0.1.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/v2dat/tar.gz/refs/tags/
+PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/v2dat/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=a85229fa6b0c9fbb4cb14c3e4734f5c6b743a779e6337bba09e144720451e1ac
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
