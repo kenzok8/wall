@@ -47,6 +47,7 @@ define Build/Prepare
 	# Patch configure: use pcre2 instead of pcre1 (OpenWrt 24.10 only provides pcre2)
 	sed -i \
 		-e 's/pcre-config/pcre2-config/g' \
+		-e 's/PCRECONFIG} --libs/PCRECONFIG} --libs8/g' \
 		-e 's/pcre_exec/pcre2_match_8/g' \
 		-e '/for ac_lib in/{s/ pcre;/ pcre2-8;/}' \
 		-e 's/pcre\.h/pcre2.h/g' \
@@ -62,6 +63,7 @@ CONFIGURE_ARGS += \
 
 TARGET_CFLAGS += -flto
 TARGET_CFLAGS += -Wno-error=use-after-free
+TARGET_CPPFLAGS += -DPCRE2_CODE_UNIT_WIDTH=8
 TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed
 
 $(foreach component,$(SHADOWSOCKSR_COMPONENTS), \
