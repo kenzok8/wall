@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=shadowsocksr-libev
-PKG_VERSION:=2.5.8
+PKG_VERSION:=2.5.9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=22dc6df12a60425fbae24f39d35c4068c212725608647a331a56d2012cefe970
+PKG_HASH:=2dd06d4591ac46f1afd26bf9054488193143d31121e31ae914f67535a8e2cd22
 
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=LICENSE
@@ -35,7 +35,7 @@ define Package/shadowsocksr-libev/Default
   endef
 endef
 
-SHADOWSOCKSR_COMPONENTS:=local nat redir server
+SHADOWSOCKSR_COMPONENTS:=local nat redir
 define shadowsocksr-libev/templates
   $(foreach component,$(SHADOWSOCKSR_COMPONENTS),
     $(call Package/shadowsocksr-libev/Default,$(component))
