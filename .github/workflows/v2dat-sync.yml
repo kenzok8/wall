@@ -27,13 +27,12 @@ jobs:
           set -euo pipefail
           TAG=$(gh release list --repo "$REPO" --limit 1 --json tagName --jq '.[0].tagName')
           VER=${TAG#v}
-          URL="https://codeload.github.com/kenzok8/v2dat/tar.gz/refs/tags/${TAG}"
+          URL="https://codeload.github.com/kenzok8/v2dat/tar.gz/${TAG}"
           curl -fL -o /tmp/v2dat.tar.gz "$URL"
           HASH=$(sha256sum /tmp/v2dat.tar.gz | awk '{print $1}')
 
           sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VER}/" v2dat/Makefile
-          sed -i "s#^PKG_SOURCE_URL:=.*#PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/v2dat/tar.gz/refs/tags/#" v2dat/Makefile
-          sed -i "s/^PKG_SOURCE_VERSION:=.*/PKG_SOURCE_VERSION:=v\$(PKG_VERSION)/" v2dat/Makefile
+          sed -i "s#^PKG_SOURCE_URL:=.*#PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/v2dat/tar.gz/v\$(PKG_VERSION)?#" v2dat/Makefile
           sed -i "s/^PKG_HASH:=.*/PKG_HASH:=${HASH}/" v2dat/Makefile
           sed -i "s#^GO_PKG:=.*#GO_PKG:=github.com/kenzok8/v2dat#" v2dat/Makefile
           sed -i "s#^  URL:=.*#  URL:=https://github.com/kenzok8/v2dat#" v2dat/Makefile
