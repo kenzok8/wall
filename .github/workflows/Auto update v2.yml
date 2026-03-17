@@ -55,7 +55,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        pakcages: [dns2tcp,ddns-go,dns2socks-rust,docker,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,redsocks2,smartdns,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,shadowsocksr-libev,trojan,trojan-go,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview,simple-obfs,ssocks,tcping,tuic-client]
+        pakcages: [dns2tcp,ddns-go,dns2socks-rust,docker,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,smartdns,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,trojan-plus,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview,tuic-client]
         include:
           - pakcages: dns2tcp
             folder: dns2tcp
@@ -157,15 +157,15 @@ jobs:
             release_download_url: https://codeload.github.com/gdy666/lucky/tar.gz/v
             file_name: 
 
-          - pakcages: redsocks2
-            folder: redsocks2
-            version_line: 9
-            hash_line: 14
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/semigodking/redsocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'release-' '{print $2}'
-            release_download_url: https://codeload.github.com/semigodking/redsocks/tar.gz/release-
-            file_name: 
+          # - pakcages: redsocks2
+          #   folder: redsocks2
+          #   version_line: 9
+          #   hash_line: 14
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/semigodking/redsocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'release-' '{print $2}'
+          #   release_download_url: https://codeload.github.com/semigodking/redsocks/tar.gz/release-
+          #   file_name:
 
           - pakcages: smartdns
             folder: smartdns
@@ -248,35 +248,35 @@ jobs:
             release_download_url: https://codeload.github.com/SagerNet/sing-box/tar.gz/v
             file_name:
 
-          - pakcages: shadowsocksr-libev
-            folder: shadowsocksr-libev
-            version_line: 4
-            hash_line: 9
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/kenzok8/shadowsocksr-libev/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v
-            file_name:
+          # - pakcages: shadowsocksr-libev
+          #   folder: shadowsocksr-libev
+          #   version_line: 4
+          #   hash_line: 9
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/kenzok8/shadowsocksr-libev/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+          #   release_download_url: https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v
+          #   file_name:
 
-          - pakcages: trojan
-            folder: trojan
-            version_line: 10
-            hash_line: 15
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/kenzok8/trojan/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/kenzok8/trojan/tar.gz/v
-            file_name:
+          # - pakcages: trojan
+          #   folder: trojan
+          #   version_line: 10
+          #   hash_line: 15
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/kenzok8/trojan/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+          #   release_download_url: https://codeload.github.com/kenzok8/trojan/tar.gz/v
+          #   file_name:
 
-          - pakcages: trojan-go
-            folder: trojan-go
-            version_line: 8
-            hash_line: 13
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/kenzok8/trojan-go/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/kenzok8/trojan-go/tar.gz/v
-            file_name:
+          # - pakcages: trojan-go
+          #   folder: trojan-go
+          #   version_line: 8
+          #   hash_line: 13
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/kenzok8/trojan-go/releases" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+          #   release_download_url: https://codeload.github.com/kenzok8/trojan-go/tar.gz/v
+          #   file_name:
 
           - pakcages: trojan-plus
             folder: trojan-plus
@@ -369,35 +369,35 @@ jobs:
             release_download_url: https://codeload.github.com/snowie2000/geoview/tar.gz/
             file_name:
 
-          - pakcages: simple-obfs
-            folder: simple-obfs
-            version_line: 9
-            hash_line: 14
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/kenzok8/simple-obfs/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/kenzok8/simple-obfs/tar.gz/v
-            file_name:
+          # - pakcages: simple-obfs
+          #   folder: simple-obfs
+          #   version_line: 9
+          #   hash_line: 14
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/kenzok8/simple-obfs/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
+          #   release_download_url: https://codeload.github.com/kenzok8/simple-obfs/tar.gz/v
+          #   file_name:
 
-          - pakcages: ssocks
-            folder: ssocks
-            version_line: 14
-            hash_line: 19
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/kenzok8/ssocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
-            release_download_url: https://codeload.github.com/kenzok8/ssocks/tar.gz/
-            file_name:
+          # - pakcages: ssocks
+          #   folder: ssocks
+          #   version_line: 14
+          #   hash_line: 19
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/kenzok8/ssocks/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
+          #   release_download_url: https://codeload.github.com/kenzok8/ssocks/tar.gz/
+          #   file_name:
 
-          - pakcages: tcping
-            folder: tcping
-            version_line: 8
-            hash_line: 13
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/kenzok8/tcping/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
-            release_download_url: https://codeload.github.com/kenzok8/tcping/tar.gz/
-            file_name:
+          # - pakcages: tcping
+          #   folder: tcping
+          #   version_line: 8
+          #   hash_line: 13
+          #   version_head: PKG_VERSION:=
+          #   hash_head: PKG_HASH:=
+          #   release_api_command: curl -sL "https://api.github.com/repos/kenzok8/tcping/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g'
+          #   release_download_url: https://codeload.github.com/kenzok8/tcping/tar.gz/
+          #   file_name:
 
           - pakcages: tuic-client
             folder: tuic-client
