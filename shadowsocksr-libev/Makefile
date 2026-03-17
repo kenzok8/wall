@@ -47,7 +47,7 @@ define Build/Prepare
 	# Patch configure: use pcre2 instead of pcre1 (OpenWrt 24.10 only provides pcre2)
 	sed -i \
 		-e 's/pcre-config/pcre2-config/g' \
-		-e 's/PCRECONFIG} --libs/PCRECONFIG} --libs8/g' \
+		-e 's/PCRE_CONFIG --libs/PCRE_CONFIG --libs8/g' \
 		-e 's/pcre_exec/pcre2_match_8/g' \
 		-e '/for ac_lib in/{s/ pcre;/ pcre2-8;/}' \
 		-e 's/pcre\.h/pcre2.h/g' \
@@ -59,7 +59,8 @@ CONFIGURE_ARGS += \
 	--disable-documentation \
 	--disable-ssp \
 	--disable-assert \
-	--enable-system-shared-lib
+	--enable-system-shared-lib \
+	--with-pcre=$(STAGING_DIR)/usr
 
 TARGET_CFLAGS += -flto
 TARGET_CFLAGS += -Wno-error=use-after-free
