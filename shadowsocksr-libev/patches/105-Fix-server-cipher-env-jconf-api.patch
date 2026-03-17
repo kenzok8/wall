@@ -1,0 +1,43 @@
+--- a/src/server.c
++++ b/src/server.c
+@@ -128,6 +128,7 @@
+ ev_timer block_list_watcher;
+ 
+ static struct cork_dllist connections;
++static cipher_env_t cipher_env;
+ 
+ static void
+ stat_update_cb(EV_P_ ev_timer *watcher, int revents)
+@@ -1619,18 +1620,18 @@
+     if (conf_path != NULL) {
+         jconf_t *conf = read_jconf(conf_path);
+         if (server_num == 0) {
+-            server_num = conf->remote_num;
++            server_num = conf->server_legacy.remote_num;
+             for (i = 0; i < server_num; i++)
+-                server_host[i] = conf->remote_addr[i].host;
++                server_host[i] = conf->server_legacy.remote_addr[i].host;
+         }
+         if (server_port == NULL) {
+-            server_port = conf->remote_port;
++            server_port = conf->server_legacy.remote_port;
+         }
+         if (password == NULL) {
+-            password = conf->password;
++            password = conf->server_legacy.password;
+         }
+         if (method == NULL) {
+-            method = conf->method;
++            method = conf->server_legacy.method;
+         }
+         if (timeout == NULL) {
+             timeout = conf->timeout;
+@@ -1795,7 +1796,7 @@
+         // Setup UDP
+         if (mode != TCP_ONLY) {
+             init_udprelay(server_host[index], server_port, mtu,
+-                          atoi(timeout), iface, NULL, NULL);
++                          atoi(timeout), iface, &cipher_env, NULL, NULL);
+         }
+ 
+         if (host && strcmp(host, ":") > 0)
