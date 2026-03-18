@@ -54,8 +54,7 @@ jobs:
             local repo="$3"
             local tag_prefix="$4"
             local source_url_line="$5"
-            local homepage_url="$6"
-            local go_pkg="$7"
+            local go_pkg="$6"
 
             if ! is_selected "$id"; then
               echo "skip $id"
@@ -93,10 +92,6 @@ jobs:
             sed -i "s#^PKG_SOURCE_URL:=.*#PKG_SOURCE_URL:=${source_url_line}#" "$makefile"
             sed -i "s/^PKG_HASH:=.*/PKG_HASH:=${hash}/" "$makefile"
 
-            if [ -n "$homepage_url" ]; then
-              sed -i "s#^[[:space:]]*URL:=.*#  URL:=${homepage_url}#" "$makefile" || true
-            fi
-
             if [ -n "$go_pkg" ]; then
               sed -i "s#^GO_PKG:=.*#GO_PKG:=${go_pkg}#" "$makefile" || true
             fi
@@ -104,16 +99,16 @@ jobs:
             echo "$id synced to tag=$tag version=$ver hash=$hash"
           }
 
-          sync_pkg "redsocks2" "redsocks2" "kenzok8/redsocks" "release-" "https://codeload.github.com/kenzok8/redsocks/tar.gz/release-\$(PKG_VERSION)?" "https://github.com/kenzok8/redsocks" ""
-          sync_pkg "trojan-go" "trojan-go" "kenzok8/trojan-go" "v" "https://codeload.github.com/kenzok8/trojan-go/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/trojan-go" ""
-          sync_pkg "trojan" "trojan" "kenzok8/trojan" "v" "https://codeload.github.com/kenzok8/trojan/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/trojan" ""
-          sync_pkg "shadowsocksr-libev" "shadowsocksr-libev" "kenzok8/shadowsocksr-libev" "v" "https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/shadowsocksr-libev" ""
-          sync_pkg "simple-obfs" "simple-obfs" "kenzok8/simple-obfs" "v" "https://codeload.github.com/kenzok8/simple-obfs/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/simple-obfs" ""
-          sync_pkg "ssocks" "ssocks" "kenzok8/ssocks" "none" "https://codeload.github.com/kenzok8/ssocks/tar.gz/\$(PKG_VERSION)?" "https://github.com/kenzok8/ssocks" ""
-          sync_pkg "tcping" "tcping" "kenzok8/tcping" "none" "https://codeload.github.com/kenzok8/tcping/tar.gz/\$(PKG_VERSION)?" "https://github.com/kenzok8/tcping" ""
-          sync_pkg "pdnsd-alt" "pdnsd-alt" "kenzok8/pdnsd" "none" "https://codeload.github.com/kenzok8/pdnsd/tar.gz/\$(PKG_VERSION)?" "" ""
-          sync_pkg "ucl" "ucl" "kenzok8/ucl" "v" "https://codeload.github.com/kenzok8/ucl/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/ucl" ""
-          sync_pkg "v2dat" "v2dat" "kenzok8/v2dat" "v" "https://codeload.github.com/kenzok8/v2dat/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/v2dat" "github.com/kenzok8/v2dat"
+          sync_pkg "redsocks2" "redsocks2" "kenzok8/redsocks" "release-" "https://codeload.github.com/kenzok8/redsocks/tar.gz/release-\$(PKG_VERSION)?" ""
+          sync_pkg "trojan-go" "trojan-go" "kenzok8/trojan-go" "v" "https://codeload.github.com/kenzok8/trojan-go/tar.gz/v\$(PKG_VERSION)?" ""
+          sync_pkg "trojan" "trojan" "kenzok8/trojan" "v" "https://codeload.github.com/kenzok8/trojan/tar.gz/v\$(PKG_VERSION)?" ""
+          sync_pkg "shadowsocksr-libev" "shadowsocksr-libev" "kenzok8/shadowsocksr-libev" "v" "https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v\$(PKG_VERSION)?" ""
+          sync_pkg "simple-obfs" "simple-obfs" "kenzok8/simple-obfs" "v" "https://codeload.github.com/kenzok8/simple-obfs/tar.gz/v\$(PKG_VERSION)?" ""
+          sync_pkg "ssocks" "ssocks" "kenzok8/ssocks" "none" "https://codeload.github.com/kenzok8/ssocks/tar.gz/\$(PKG_VERSION)?" ""
+          sync_pkg "tcping" "tcping" "kenzok8/tcping" "none" "https://codeload.github.com/kenzok8/tcping/tar.gz/\$(PKG_VERSION)?" ""
+          sync_pkg "pdnsd-alt" "pdnsd-alt" "kenzok8/pdnsd" "none" "https://codeload.github.com/kenzok8/pdnsd/tar.gz/\$(PKG_VERSION)?" ""
+          sync_pkg "ucl" "ucl" "kenzok8/ucl" "v" "https://codeload.github.com/kenzok8/ucl/tar.gz/v\$(PKG_VERSION)?" ""
+          sync_pkg "v2dat" "v2dat" "kenzok8/v2dat" "v" "https://codeload.github.com/kenzok8/v2dat/tar.gz/v\$(PKG_VERSION)?" "github.com/kenzok8/v2dat"
 
       - name: Commit and push when changed
         run: |
