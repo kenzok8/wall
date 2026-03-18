@@ -1,0 +1,129 @@
+name: local forks sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Comma-separated package IDs or all"
+        required: false
+        default: "all"
+  schedule:
+    - cron: "35 2 * * 1,4"
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Sync maintained fork packages
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          SELECTED_PACKAGES: ${{ github.event.inputs.packages }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SELECTED_PACKAGES:-}" ] || [ "${SELECTED_PACKAGES}" = "false" ]; then
+            SELECTED_PACKAGES="all"
+          fi
+          SELECTED_PACKAGES="$(echo "$SELECTED_PACKAGES" | tr '[:upper:]' '[:lower:]' | tr -d ' ')"
+          echo "selected packages: $SELECTED_PACKAGES"
+
+          is_selected() {
+            local id="$1"
+            if [ "$SELECTED_PACKAGES" = "all" ]; then
+              return 0
+            fi
+            case ",$SELECTED_PACKAGES," in
+              *",$id,"*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          sync_pkg() {
+            local id="$1"
+            local folder="$2"
+            local repo="$3"
+            local tag_prefix="$4"
+            local source_url_line="$5"
+            local homepage_url="$6"
+            local go_pkg="$7"
+
+            if ! is_selected "$id"; then
+              echo "skip $id"
+              return 0
+            fi
+
+            local makefile="$GITHUB_WORKSPACE/$folder/Makefile"
+            if [ ! -f "$makefile" ]; then
+              echo "missing Makefile for $id: $makefile"
+              return 0
+            fi
+
+            local tag
+            tag="$(gh release list --repo "$repo" --limit 1 --json tagName --jq '.[0].tagName // ""')"
+            if [ -z "$tag" ]; then
+              echo "no release found for $repo, skip $id"
+              return 0
+            fi
+
+            local ver="$tag"
+            case "$tag_prefix" in
+              v) ver="${tag#v}" ;;
+              release-) ver="${tag#release-}" ;;
+              none) ver="$tag" ;;
+              *) echo "unknown tag prefix: $tag_prefix"; return 1 ;;
+            esac
+
+            local tarball="/tmp/${id}-${tag}.tar.gz"
+            local download_url="https://codeload.github.com/${repo}/tar.gz/${tag}"
+            curl -fsSL "$download_url" -o "$tarball"
+            local hash
+            hash="$(sha256sum "$tarball" | awk '{print $1}')"
+
+            sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${ver}/" "$makefile"
+            sed -i "s#^PKG_SOURCE_URL:=.*#PKG_SOURCE_URL:=${source_url_line}#" "$makefile"
+            sed -i "s/^PKG_HASH:=.*/PKG_HASH:=${hash}/" "$makefile"
+
+            if [ -n "$homepage_url" ]; then
+              sed -i "s#^[[:space:]]*URL:=.*#  URL:=${homepage_url}#" "$makefile" || true
+            fi
+
+            if [ -n "$go_pkg" ]; then
+              sed -i "s#^GO_PKG:=.*#GO_PKG:=${go_pkg}#" "$makefile" || true
+            fi
+
+            echo "$id synced to tag=$tag version=$ver hash=$hash"
+          }
+
+          sync_pkg "redsocks2" "redsocks2" "kenzok8/redsocks" "release-" "https://codeload.github.com/kenzok8/redsocks/tar.gz/release-\$(PKG_VERSION)?" "https://github.com/kenzok8/redsocks" ""
+          sync_pkg "trojan-go" "trojan-go" "kenzok8/trojan-go" "v" "https://codeload.github.com/kenzok8/trojan-go/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/trojan-go" ""
+          sync_pkg "trojan" "trojan" "kenzok8/trojan" "v" "https://codeload.github.com/kenzok8/trojan/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/trojan" ""
+          sync_pkg "shadowsocksr-libev" "shadowsocksr-libev" "kenzok8/shadowsocksr-libev" "v" "https://codeload.github.com/kenzok8/shadowsocksr-libev/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/shadowsocksr-libev" ""
+          sync_pkg "simple-obfs" "simple-obfs" "kenzok8/simple-obfs" "v" "https://codeload.github.com/kenzok8/simple-obfs/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/simple-obfs" ""
+          sync_pkg "ssocks" "ssocks" "kenzok8/ssocks" "none" "https://codeload.github.com/kenzok8/ssocks/tar.gz/\$(PKG_VERSION)?" "https://github.com/kenzok8/ssocks" ""
+          sync_pkg "tcping" "tcping" "kenzok8/tcping" "none" "https://codeload.github.com/kenzok8/tcping/tar.gz/\$(PKG_VERSION)?" "https://github.com/kenzok8/tcping" ""
+          sync_pkg "pdnsd-alt" "pdnsd-alt" "kenzok8/pdnsd" "none" "https://codeload.github.com/kenzok8/pdnsd/tar.gz/\$(PKG_VERSION)?" "" ""
+          sync_pkg "ucl" "ucl" "kenzok8/ucl" "v" "https://codeload.github.com/kenzok8/ucl/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/ucl" ""
+          sync_pkg "v2dat" "v2dat" "kenzok8/v2dat" "v" "https://codeload.github.com/kenzok8/v2dat/tar.gz/v\$(PKG_VERSION)?" "https://github.com/kenzok8/v2dat" "github.com/kenzok8/v2dat"
+
+      - name: Commit and push when changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No package update needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add redsocks2/Makefile trojan-go/Makefile trojan/Makefile shadowsocksr-libev/Makefile simple-obfs/Makefile ssocks/Makefile tcping/Makefile pdnsd-alt/Makefile ucl/Makefile v2dat/Makefile
+          git commit -m "sync: update maintained fork packages from kenzok8 releases"
+          git push
