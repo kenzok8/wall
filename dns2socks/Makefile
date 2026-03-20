@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dns2socks
-PKG_VERSION:=2.1
-PKG_RELEASE:=3
+PKG_VERSION:=2.2
+PKG_RELEASE:=1
 
-PKG_SOURCE:=SourceCode.zip
-PKG_SOURCE_URL:=https://downloads.sourceforge.net/project/dns2socks/
-PKG_HASH:=406b5003523577d39da66767adfe54f7af9b701374363729386f32f6a3a995f4
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/kenzok8/dns2socks/tar.gz/refs/tags/
+PKG_HASH:=790f7ca5ec07677a699121eb071c9e66cdafe65a22bb229eed7fd3cf215631d2
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_LICENSE:=BSD-3-Clause
@@ -24,7 +24,7 @@ define Package/dns2socks
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
   TITLE:=DNS to SOCKS or HTTP proxy
-  URL:=https://sourceforge.net/projects/dns2socks/
+  URL:=https://github.com/kenzok8/dns2socks
   DEPENDS:=+libpthread
 endef
 
@@ -33,24 +33,19 @@ define Package/dns2socks/description
   a SOCKS tunnel like Tor or a HTTP proxy.
 endef
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
-	unzip -q $(DL_DIR)/$(PKG_SOURCE) -d $(PKG_BUILD_DIR)
-endef
-
 define Build/Compile
 	$(TARGET_CC) \
 	$(TARGET_CFLAGS) \
 	$(TARGET_CPPFLAGS) \
 	$(FPIC) \
-	-o $(PKG_BUILD_DIR)/DNS2SOCKS/dns2socks \
-	$(PKG_BUILD_DIR)/DNS2SOCKS/DNS2SOCKS.c \
+	-o $(PKG_BUILD_DIR)/dns2socks \
+	$(PKG_BUILD_DIR)/src/dns2socks.c \
 	$(TARGET_LDFLAGS) -pthread
 endef
 
 define Package/dns2socks/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/DNS2SOCKS/dns2socks $(1)/usr/bin/dns2socks
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dns2socks $(1)/usr/bin/dns2socks
 endef
 
 $(eval $(call BuildPackage,dns2socks))
