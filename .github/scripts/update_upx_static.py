@@ -51,7 +51,7 @@ def render_hash_block(hashes):
         lines.append(f"{prefix} ($(UPX_ARCH),{upx_arch})")
         lines.append(f"  PKG_HASH:={hashes[upx_arch]}")
     lines.append("else")
-    lines.append("  PKG_HASH:=skip")
+    lines.append("  $(error Unsupported UPX_ARCH '$(UPX_ARCH)' for upx-static)")
     lines.append("endif")
     lines.append("# AUTO-GENERATED HASHES END")
     return "\n".join(lines)

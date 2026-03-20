@@ -57,7 +57,7 @@ else ifeq ($(UPX_ARCH),powerpc64le)
 else ifeq ($(UPX_ARCH),riscv64)
   PKG_HASH:=8dec678ddcafb61837ecd59810f6ad89dfd30edd84333441aff44e088d4b7898
 else
-  PKG_HASH:=skip
+  $(error Unsupported UPX_ARCH '$(UPX_ARCH)' for upx-static)
 endif
 # AUTO-GENERATED HASHES END
 
