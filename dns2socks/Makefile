@@ -1,38 +1,41 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Copyright (C) 2021 ImmortalWrt.org
+# Copyright (C) 2021-2026 ImmortalWrt.org
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dns2socks
 PKG_VERSION:=2.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=SourceCode.zip
-PKG_SOURCE_URL:=@SF/dns2socks
-PKG_SOURCE_DATE:=2020-02-18
+PKG_SOURCE_URL:=https://downloads.sourceforge.net/project/dns2socks/
 PKG_HASH:=406b5003523577d39da66767adfe54f7af9b701374363729386f32f6a3a995f4
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-PKG_MAINTAINER:=ghostmaker
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILE:=LICENSE
+PKG_MAINTAINER:=ghostmaker
 
 include $(INCLUDE_DIR)/package.mk
-
-UNZIP_CMD:=unzip -q -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE)
 
 define Package/dns2socks
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
   TITLE:=DNS to SOCKS or HTTP proxy
-  URL:=http://dns2socks.sourceforge.net/
+  URL:=https://sourceforge.net/projects/dns2socks/
   DEPENDS:=+libpthread
 endef
 
 define Package/dns2socks/description
   This is a command line utility to resolve DNS requests via
   a SOCKS tunnel like Tor or a HTTP proxy.
+endef
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	unzip -q $(DL_DIR)/$(PKG_SOURCE) -d $(PKG_BUILD_DIR)
 endef
 
 define Build/Compile
