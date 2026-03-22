@@ -170,7 +170,7 @@ jobs:
       - name: Update adguardhome
         run: |
           cd $GITHUB_WORKSPACE/adguardhome
-          Old_PKG_VERSION=$(sed -n '9p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '6p' Makefile | awk -F '=' '{print $2}')
           New_PKG_VERSION=$(curl -sL "https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}')
           
           echo "adguardhome当前版本: $Old_PKG_VERSION"
@@ -182,14 +182,14 @@ jobs:
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
             echo "检测到版本更新，开始下载源码并计算HASH..."
             echo "更新adguardhome到版本: $New_PKG_VERSION"
-            sed -i "9c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            sed -i "6c PKG_VERSION:=$New_PKG_VERSION" Makefile
             
             cd ~/pack && mkdir -p adguardhome && cd adguardhome
             wget https://codeload.github.com/AdguardTeam/AdGuardHome/tar.gz/v$New_PKG_VERSION
             PKG_HASH=$(sha256sum v$New_PKG_VERSION | awk '{print $1}')
             
             cd $GITHUB_WORKSPACE/adguardhome
-            sed -i "14c PKG_HASH:=$PKG_HASH" Makefile
+            sed -i "11c PKG_HASH:=$PKG_HASH" Makefile
             
             # 版本更新时，同时更新frontend hash
             echo "版本更新，同时下载并更新frontend hash..."
@@ -199,7 +199,7 @@ jobs:
             FRONTEND_HASH=$(sha256sum AdGuardHome_frontend.tar.gz | awk '{print $1}')
             
             cd $GITHUB_WORKSPACE/adguardhome
-            sed -i "61s/HASH:=.*/HASH:=$FRONTEND_HASH/" Makefile
+            sed -i "16c FRONTEND_HASH:=$FRONTEND_HASH" Makefile
             
             UPDATED=true
           else
