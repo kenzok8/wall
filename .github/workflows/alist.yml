@@ -59,6 +59,13 @@ jobs:
           echo "alist当前版本: $Old_PKG_VERSION"
           echo "alist最新版本: $New_PKG_VERSION"
           
+          # 检查API是否返回有效版本
+          if [ -z "$New_PKG_VERSION" ]; then
+            echo "⚠️ 无法获取最新版本号(API可能被限速)，跳过更新"
+            echo "ALIST_UPDATED=false" >> $GITHUB_ENV
+            exit 0
+          fi
+          
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
             echo "检测到版本更新，开始下载源码并计算HASH..."
             echo "更新alist到版本: $New_PKG_VERSION"
@@ -86,6 +93,13 @@ jobs:
           
           echo "alist-web当前版本: $Old_WEB_VERSION"
           echo "alist-web最新版本: $New_WEB_VERSION"
+          
+          # 检查API是否返回有效版本
+          if [ -z "$New_WEB_VERSION" ]; then
+            echo "⚠️ 无法获取最新版本号(API可能被限速)，跳过更新"
+            echo "ALIST_WEB_UPDATED=false" >> $GITHUB_ENV
+            exit 0
+          fi
           
           if [ "$Old_WEB_VERSION" != "$New_WEB_VERSION" ]; then
             echo "检测到版本更新，开始下载并计算HASH..."
@@ -178,6 +192,13 @@ jobs:
           
           UPDATED=false
           
+          # 检查API是否返回有效版本
+          if [ -z "$New_PKG_VERSION" ]; then
+            echo "⚠️ 无法获取最新版本号(API可能被限速)，跳过更新"
+            echo "ADGUARD_UPDATED=false" >> $GITHUB_ENV
+            exit 0
+          fi
+          
           # 更新主程序版本和hash
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
             echo "检测到版本更新，开始下载源码并计算HASH..."
@@ -264,6 +285,14 @@ jobs:
           
           echo "v2raya当前版本: $Old_PKG_VERSION"
           echo "v2raya最新版本: $New_PKG_VERSION"
+          
+          # 检查API是否返回有效版本
+          if [ -z "$New_PKG_VERSION" ]; then
+            echo "⚠️ 无法获取最新版本号(API可能被限速)，跳过更新"
+            echo "V2RAYA_UPDATED=false" >> $GITHUB_ENV
+            echo "V2RAYA_WEB_UPDATED=false" >> $GITHUB_ENV
+            exit 0
+          fi
           
           if [ "$Old_PKG_VERSION" != "$New_PKG_VERSION" ]; then
             echo "检测到版本更新，开始下载源码并计算HASH..."
