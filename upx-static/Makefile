@@ -1,3 +1,4 @@
+
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (C) kenzok8 <https://github.com/kenzok8>
 
@@ -10,25 +11,26 @@ PKG_SOURCE_VERSION:=v5.1.1
 
 # Map OpenWrt $(ARCH) to UPX pre-built binary arch name.
 # NOTE: OpenWrt uses "aarch64", UPX tarball uses "arm64".
-ifeq ($(ARCH),x86_64)
+UPX_ARCH:=$(ARCH)
+ifeq ($(findstring x86_64,$(ARCH)),x86_64)
   UPX_ARCH:=amd64
-else ifeq ($(ARCH),i386)
+else ifeq ($(findstring i386,$(ARCH)),i386)
   UPX_ARCH:=i386
-else ifeq ($(ARCH),aarch64)
+else ifeq ($(findstring aarch64,$(ARCH)),aarch64)
   UPX_ARCH:=arm64
-else ifeq ($(ARCH),arm)
+else ifeq ($(findstring arm,$(ARCH)),arm)
   UPX_ARCH:=arm
-else ifeq ($(ARCH),armeb)
+else ifeq ($(findstring armeb,$(ARCH)),armeb)
   UPX_ARCH:=armeb
-else ifeq ($(ARCH),mipsel)
+else ifeq ($(findstring mipsel,$(ARCH)),mipsel)
   UPX_ARCH:=mipsel
-else ifeq ($(ARCH),mips)
+else ifeq ($(findstring mips,$(ARCH)),mips)
   UPX_ARCH:=mips
-else ifeq ($(ARCH),powerpc)
+else ifeq ($(findstring powerpc,$(ARCH)),powerpc)
   UPX_ARCH:=powerpc
-else ifeq ($(ARCH),powerpc64)
+else ifeq ($(findstring powerpc64,$(ARCH)),powerpc64)
   UPX_ARCH:=powerpc64le
-else ifeq ($(ARCH),riscv64)
+else ifeq ($(findstring riscv64,$(ARCH)),riscv64)
   UPX_ARCH:=riscv64
 endif
 
