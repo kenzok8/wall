@@ -1,225 +1,87 @@
 name: "gn auto update"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
-  repository_dispatch:
   workflow_dispatch:
-    inputs:
-      ssh:
-        description: 'SSH connection to Actions'
-        required: false
-        default: 'false'
-      force_rehash:
-        description: 'Force recompute hash even if same version'
-        required: false
-        default: 'false'
   schedule:
     - cron: "0 0 * * 0"
-env:
-  TZ: Asia/Shanghai
+
+permissions:
+  contents: write
 
 jobs:
-  job_auto_update_gn:
+  get_current_info:
+    runs-on: ubuntu-latest
+    outputs:
+      pkg_source_version: ${{ steps.info.outputs.pkg_source_version }}
+      pkg_source_date: ${{ steps.info.outputs.pkg_source_date }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: info
+        id: info
+        run: |
+          echo "pkg_source_version=$(grep 'PKG_SOURCE_VERSION:=' gn/Makefile | cut -d '=' -f 2)" >> $GITHUB_OUTPUT
+          echo "pkg_source_date=$(grep 'PKG_SOURCE_DATE:=' gn/Makefile | cut -d '=' -f 2)" >> $GITHUB_OUTPUT
+
+  get_latest_info:
+    runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.info.outputs.commit_sha }}
+      commit_date: ${{ steps.info.outputs.commit_date }}
+      short_ver: ${{ steps.info.outputs.short_ver }}
+      long_ver: ${{ steps.info.outputs.long_ver }}
+      commit_position: ${{ steps.info.outputs.commit_position }}
+      checksum: ${{ steps.info.outputs.checksum }}
+    steps:
+      - name: clone gn
+        run: git clone https://gn.googlesource.com/gn.git gn-src
+
+      - name: info
+        id: info
+        run: |
+          echo "commit_sha=$(git -C gn-src rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "commit_date=$(git -C gn-src log -1 --format=%cs)" >> $GITHUB_OUTPUT
+          echo "short_ver=$(git -C gn-src rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+          echo "long_ver=$(git -C gn-src rev-parse HEAD | head -c 12)" >> $GITHUB_OUTPUT
+          echo "commit_position=$(git -C gn-src rev-list --count HEAD)" >> $GITHUB_OUTPUT
+          git -C gn-src archive --output=gn.tar.gz HEAD
+          echo "checksum=$(sha256sum gn-src/gn.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
+  update:
+    needs:
+      - get_current_info
+      - get_latest_info
+    if: needs.get_current_info.outputs.pkg_source_version != needs.get_latest_info.outputs.commit_sha
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set timezone & install zstd
-        run: |
-          sudo timedatectl set-timezone "$TZ"
-          sudo apt-get update -y
-          sudo apt-get install -y zstd
-
-      - name: Get old version from Makefile
-        id: oldver
-        run: |
-          cd $GITHUB_WORKSPACE/gn
-          echo "old_ver=$(sed -n '/^PKG_SOURCE_VERSION:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
-          echo "old_date=$(sed -n '/^PKG_SOURCE_DATE:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
-          echo "old_hash=$(sed -n '/^PKG_MIRROR_HASH:=/p' Makefile | awk -F '=' '{print $2}')" >> $GITHUB_OUTPUT
-
-      - name: Get latest gn commit
-        id: newver
-        run: |
-          NEW_VER=$(git ls-remote https://gn.googlesource.com/gn.git refs/heads/main | cut -f1)
-          SHORT_VER=${NEW_VER:0:8}
-          LONG_VER=${NEW_VER:0:12}
-          echo "new_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          echo "short_ver=$SHORT_VER" >> $GITHUB_OUTPUT
-          echo "long_ver=$LONG_VER" >> $GITHUB_OUTPUT
-
-      - name: Clone and package gn
-        id: pack
-        run: |
-          cd "$GITHUB_WORKSPACE"
-          cat > calc_gn_hash.sh <<'EOF'
-          #!/usr/bin/env bash
-          set -euo pipefail
-
-          COMMIT="$1"
-          SHORT_VER="$2"
-
-          WORK_DIR="/work"
-          SDK_DIR="/builder"
-          SRC_GIT_DIR="/tmp/gn-src"
-          TEMP_FEED_DIR="$WORK_DIR/.gn-hash-feed"
-          TEMP_PKG_DIR="$TEMP_FEED_DIR/gn"
-          TEMP_MAKEFILE="$TEMP_PKG_DIR/Makefile"
-
-          rm -rf "$SRC_GIT_DIR" "$TEMP_FEED_DIR" "$WORK_DIR/hash.txt" "$WORK_DIR/new_date.txt" "$WORK_DIR/commit_position.txt" "$WORK_DIR/gn_make_check.log"
-
-          git clone https://gn.googlesource.com/gn.git "$SRC_GIT_DIR"
-          cd "$SRC_GIT_DIR"
-          git checkout "$COMMIT"
-          NEW_DATE=$(git log -1 --date=format:%Y-%m-%d --format=%cd)
-          COMMIT_POSITION=$(git rev-list --count HEAD)
-          cd /
-
-          mkdir -p "$TEMP_FEED_DIR"
-          cp -a "$WORK_DIR/gn" "$TEMP_PKG_DIR"
-
-          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$NEW_DATE" "$TEMP_MAKEFILE"
-          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=$COMMIT" "$TEMP_MAKEFILE"
-          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=0000000000000000000000000000000000000000000000000000000000000000" "$TEMP_MAKEFILE"
-
-          cd "$SDK_DIR"
-
-          # 防止 SDK 镜像内置/残留 dl 缓存导致 hash 计算偏差
-          # 必须清理 gn 源码包后再让 OpenWrt 下载流程重新生成 tar.zst
-          rm -f "$SDK_DIR"/dl/gn-*.tar.zst "$SDK_DIR"/dl/gn-*.tar.zst.* || true
-
-          grep -q '^src-link gn_hash /work/.gn-hash-feed$' feeds.conf.default || echo 'src-link gn_hash /work/.gn-hash-feed' >> feeds.conf.default
-          ./scripts/feeds update gn_hash
-          ./scripts/feeds install -p gn_hash gn
-
-          export TERM=xterm
-          [ -f .config ] || touch .config
-          make defconfig > /dev/null
-
-          set +e
-          # 关键：禁用镜像下载，强制走源码打包路径，避免拿到历史镜像包的旧 hash
-          make package/feeds/gn_hash/gn/download V=s DOWNLOAD_MIRROR=0 > "$WORK_DIR/gn_make_check.log" 2>&1
-          MAKE_RC=$?
-          set -e
-
-          ARCHIVE_NAME="gn-${NEW_DATE//-/.}~${SHORT_VER}.tar.zst"
-          ARCHIVE_PATH="$SDK_DIR/dl/$ARCHIVE_NAME"
-
-          if [ ! -f "$ARCHIVE_PATH" ]; then
-            echo "未生成预期源码包: $ARCHIVE_PATH"
-            cat "$WORK_DIR/gn_make_check.log"
-            exit 1
-          fi
-
-          REAL_HASH=$(sha256sum "$ARCHIVE_PATH" | awk '{print $1}')
-
-          if [ "$MAKE_RC" -ne 0 ]; then
-            echo "下载/打包阶段返回非零，终止提交；日志如下："
-            cat "$WORK_DIR/gn_make_check.log"
-            exit 1
-          fi
-
-          # 二次校验：把计算出的 hash 写回临时 Makefile，再执行 check
-          # 只接受“严格通过”，不再从日志猜测替代 hash
-          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$REAL_HASH" "$TEMP_MAKEFILE"
-          set +e
-          make package/feeds/gn_hash/gn/check V=s DOWNLOAD_MIRROR=0 > "$WORK_DIR/gn_make_verify.log" 2>&1
-          VERIFY_RC=$?
-          set -e
-
-          if [ "$VERIFY_RC" -ne 0 ]; then
-            echo "二次校验失败，停止提交（避免写入错误 hash）"
-            cat "$WORK_DIR/gn_make_verify.log"
-            exit 1
-          fi
-
-          echo "$REAL_HASH" > "$WORK_DIR/hash.txt"
-          echo "$NEW_DATE" > "$WORK_DIR/new_date.txt"
-          echo "$COMMIT_POSITION" > "$WORK_DIR/commit_position.txt"
-          EOF
-          chmod +x calc_gn_hash.sh
-
-          docker run --rm --user root -v "$GITHUB_WORKSPACE:/work" ghcr.io/openwrt/sdk:x86_64-24.10.2 /bin/bash -lc "cd /work && ./calc_gn_hash.sh '${{ steps.newver.outputs.new_ver }}' '${{ steps.newver.outputs.short_ver }}'"
-
-          PKG_HASH=$(cat "$GITHUB_WORKSPACE/hash.txt")
-          NEW_DATE=$(cat "$GITHUB_WORKSPACE/new_date.txt")
-          COMMIT_POSITION=$(cat "$GITHUB_WORKSPACE/commit_position.txt")
-          DIR_DATE=${NEW_DATE//-/.}
-          TAR_NAME="gn-${DIR_DATE}~${{ steps.newver.outputs.short_ver }}.tar.zst"
-
-          echo "new_date=$NEW_DATE" >> $GITHUB_OUTPUT
-          echo "tar_name=$TAR_NAME" >> $GITHUB_OUTPUT
-          echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
-          echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
-
-      - name: Check if update is needed
-        id: need_update
-        run: |
-          NEED="false"
-          REASON=""
-
-          if [ "${{ github.event.inputs.force_rehash }}" = "true" ]; then
-            NEED="true"
-            REASON="force rehash"
-          fi
-
-          if [ "${{ steps.oldver.outputs.old_ver }}" != "${{ steps.newver.outputs.new_ver }}" ]; then
-            NEED="true"
-            REASON="new version"
-          fi
-
-          if [ "${{ steps.oldver.outputs.old_date }}" != "${{ steps.pack.outputs.new_date }}" ]; then
-            NEED="true"
-            [ -z "$REASON" ] && REASON="new source date"
-          fi
-
-          if [ "$NEED" = "true" ] && [ "${{ steps.oldver.outputs.old_hash }}" != "${{ steps.pack.outputs.pkg_hash }}" ]; then
-            [ -z "$REASON" ] && REASON="hash changed with new source"
-          fi
-
-          echo "need=$NEED" >> $GITHUB_OUTPUT
-          echo "reason=${REASON:-no change}" >> $GITHUB_OUTPUT
-          echo "Need update: $NEED (${REASON:-no change})"
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Update Makefile
-        if: steps.need_update.outputs.need == 'true'
         run: |
-          cd $GITHUB_WORKSPACE/gn
-          sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=${{ steps.newver.outputs.new_ver }}" Makefile
-          sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=${{ steps.pack.outputs.new_date }}" Makefile
-          sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=${{ steps.pack.outputs.pkg_hash }}" Makefile
+          sed -i "s/PKG_SOURCE_DATE:=.*/PKG_SOURCE_DATE:=${{ needs.get_latest_info.outputs.commit_date }}/" gn/Makefile
+          sed -i "s/PKG_SOURCE_VERSION:=.*/PKG_SOURCE_VERSION:=${{ needs.get_latest_info.outputs.commit_sha }}/" gn/Makefile
+          sed -i "s/PKG_MIRROR_HASH:=.*/PKG_MIRROR_HASH:=${{ needs.get_latest_info.outputs.checksum }}/" gn/Makefile
 
       - name: Update last_commit_position.h
-        if: steps.need_update.outputs.need == 'true'
         run: |
-          COMMIT_POSITION_FILE="$GITHUB_WORKSPACE/gn/src/out/last_commit_position.h"
+          COMMIT_POSITION_FILE="gn/src/out/last_commit_position.h"
           if [ -f "$COMMIT_POSITION_FILE" ]; then
-            sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM ${{ steps.pack.outputs.commit_position }}/" "$COMMIT_POSITION_FILE"
-            sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"${{ steps.pack.outputs.commit_position }} (${{ steps.newver.outputs.long_ver }})\"/" "$COMMIT_POSITION_FILE"
+            sed -i "6s/#define LAST_COMMIT_POSITION_NUM .*/#define LAST_COMMIT_POSITION_NUM ${{ needs.get_latest_info.outputs.commit_position }}/" "$COMMIT_POSITION_FILE"
+            sed -i "7s/#define LAST_COMMIT_POSITION .*/#define LAST_COMMIT_POSITION \"${{ needs.get_latest_info.outputs.commit_position }} (${{ needs.get_latest_info.outputs.long_ver }})\"/" "$COMMIT_POSITION_FILE"
           fi
 
-      - name: Commit and Push gn Changes
-        if: steps.need_update.outputs.need == 'true'
+      - name: Commit and push
         run: |
-          cd $GITHUB_WORKSPACE
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add gn/Makefile
-          git add gn/src/out/last_commit_position.h || true
-          COMMIT_MSG="gn: auto update to ${{ steps.newver.outputs.short_ver }}"
-          if git diff --cached --quiet; then
-            echo "No file changes after hash/version check, skip commit"
-            exit 0
-          fi
-          git commit -m "$COMMIT_MSG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gn/Makefile gn/src/out/last_commit_position.h
+          git diff --cached --quiet && { echo "No changes"; exit 0; }
+          git commit -m "gn: auto update to ${{ needs.get_latest_info.outputs.short_ver }}"
           git push origin main
-          echo "✅ Successfully committed and pushed gn changes: $COMMIT_MSG"
-
-      - name: Output update log
-        if: steps.need_update.outputs.need == 'true'
-        run: |
-          echo "GN auto updated:"
-          echo "Reason: ${{ steps.need_update.outputs.reason }}"
-          echo "New version: ${{ steps.newver.outputs.new_ver }}"
-          echo "Date: ${{ steps.pack.outputs.new_date }}"
-          echo "Hash: ${{ steps.pack.outputs.pkg_hash }}"
-          echo "Commit position: ${{ steps.pack.outputs.commit_position }}"
