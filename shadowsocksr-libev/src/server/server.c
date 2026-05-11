@@ -683,15 +683,14 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
 
             if(obfs_compatible == 1)
             {
-                char *back_buf = (char*)malloc(sizeof(buffer_t));
-                memcpy(back_buf, buf, sizeof(buffer_t));
+                buffer_t back_buf;
+                memcpy(&back_buf, buf, sizeof(buffer_t));
                 buf->len = obfs_plugin->server_decode(server->obfs, &buf->array, buf->len, &buf->capacity, &needsendback);
 
                 if ((int)buf->len < 0)
                 {
                     LOGE("obfs_compatible");
-                    memcpy(buf, back_buf, sizeof(buffer_t));
-                    free(back_buf);
+                    memcpy(buf, &back_buf, sizeof(buffer_t));
                     server->obfs_compatible_state = 1;
                 }
             }
