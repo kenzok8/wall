@@ -579,7 +579,7 @@ jobs:
           [ -z "$NEW_COMMIT" ] && NEW_COMMIT=$(git ls-remote https://github.com/shadowsocks/shadowsocks-libev.git "refs/tags/${NEW_TAG}" | cut -f1)
 
           ISO_DATE=$(curl -fsSL https://api.github.com/repos/shadowsocks/shadowsocks-libev/commits/$NEW_COMMIT | grep '"date"' | head -n1 | awk -F '"' '{print $4}')
-          NEW_DATE=$(date -u -d "$ISO_DATE" +%Y-%-m-%-d)
+          NEW_DATE=$(date -u -d "$ISO_DATE" +%Y-%m-%d)
 
           echo "当前版本: $OLD_VER ($OLD_COMMIT)"
           echo "最新版本: $NEW_VER ($NEW_COMMIT)"
@@ -601,28 +601,32 @@ jobs:
           PKG_NAME=shadowsocks-libev
           NEW_VER=${{ steps.check_ss_libev.outputs.new_ver }}
           NEW_COMMIT=${{ steps.check_ss_libev.outputs.new_commit }}
-          NEW_DATE=${{ steps.check_ss_libev.outputs.new_date }}
-          SHORT_COMMIT=${NEW_COMMIT:0:8}
-          DIR_NAME="${PKG_NAME}-${NEW_VER}~${NEW_DATE}~${SHORT_COMMIT}"
+          DIR_NAME="${PKG_NAME}-${NEW_VER}"
+          SDK_IMAGE="ghcr.io/openwrt/sdk:x86_64-24.10.4"
 
           mkdir -p ~/main/shadowsocks-libev && cd ~/main/shadowsocks-libev
           rm -rf src "$DIR_NAME" "$DIR_NAME.tar.git" "$DIR_NAME.tar.zst"
 
-          git clone https://github.com/shadowsocks/shadowsocks-libev.git src
-          cd src
-          git checkout "$NEW_COMMIT"
-          TAR_TIMESTAMP=$(git log -1 --no-show-signature --format='@%ct')
-          cd ..
-
-          (cd src && git config core.abbrev 8 && git archive --format=tar HEAD --output="../$DIR_NAME.tar.git")
-          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C src -f "$DIR_NAME.tar.git" -r .git .gitmodules 2>/dev/null || true
-
-          rm -rf src
-          mkdir "$DIR_NAME"
-          tar -C "$DIR_NAME" -xf "$DIR_NAME.tar.git"
-          (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules) || true
-
-          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$DIR_NAME.tar.zst"
+          docker run --rm \
+            --user root \
+            -e NEW_COMMIT="$NEW_COMMIT" \
+            -e DIR_NAME="$DIR_NAME" \
+            -v "$PWD:/work" \
+            "$SDK_IMAGE" \
+            bash -lc '
+              set -euo pipefail
+              cd /work
+              git clone https://github.com/shadowsocks/shadowsocks-libev.git src
+              git -C src checkout "$NEW_COMMIT"
+              TAR_TIMESTAMP=$(git -C src log -1 --format="@%ct")
+              (cd src && git config core.abbrev 8 && git archive --format=tar HEAD --output="../$DIR_NAME.tar.git")
+              tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C src -f "$DIR_NAME.tar.git" -r .git .gitmodules 2>/dev/null
+              rm -rf src
+              mkdir "$DIR_NAME"
+              tar -C "$DIR_NAME" -xf "$DIR_NAME.tar.git"
+              (cd "$DIR_NAME" && git submodule update --init --recursive -- && rm -rf .git .gitmodules)
+              tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c "$DIR_NAME" | zstd -T0 --ultra -20 -c > "$DIR_NAME.tar.zst"
+            '
           PKG_HASH=$(sha256sum "$DIR_NAME.tar.zst" | awk '{print $1}')
 
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT

@@ -37,19 +37,52 @@ jobs:
       commit_position: ${{ steps.info.outputs.commit_position }}
       checksum: ${{ steps.info.outputs.checksum }}
     steps:
+      - name: install dependencies
+        run: sudo apt-get update -y && sudo apt-get install -y zstd
+
       - name: clone gn
         run: git clone https://gn.googlesource.com/gn.git gn-src
 
       - name: info
         id: info
         run: |
-          echo "commit_sha=$(git -C gn-src rev-parse HEAD)" >> $GITHUB_OUTPUT
-          echo "commit_date=$(git -C gn-src log -1 --format=%cs)" >> $GITHUB_OUTPUT
-          echo "short_ver=$(git -C gn-src rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-          echo "long_ver=$(git -C gn-src rev-parse HEAD | head -c 12)" >> $GITHUB_OUTPUT
-          echo "commit_position=$(git -C gn-src rev-list --count HEAD)" >> $GITHUB_OUTPUT
-          git -C gn-src archive --output=gn.tar.gz HEAD
-          echo "checksum=$(sha256sum gn-src/gn.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+          set -euo pipefail
+
+          PKG_NAME=gn
+          PKG_SOURCE_URL=https://gn.googlesource.com/gn.git
+          COMMIT_SHA=$(git -C gn-src rev-parse HEAD)
+          COMMIT_DATE=$(git -C gn-src log -1 --format=%cs)
+          SHORT_VER=$(git -C gn-src rev-parse --short=8 HEAD)
+          LONG_VER=${COMMIT_SHA:0:12}
+          COMMIT_POSITION=$(git -C gn-src rev-list --count HEAD)
+          PKG_VERSION="${COMMIT_DATE//-/.}~${SHORT_VER}"
+          SUBDIR="${PKG_NAME}-${PKG_VERSION}"
+          FILE="${SUBDIR}.tar.zst"
+          WORK_DIR="${RUNNER_TEMP}/gn-openwrt-hash"
+
+          rm -rf "$WORK_DIR"
+          mkdir -p "$WORK_DIR"
+          git clone "$PKG_SOURCE_URL" "$WORK_DIR/$SUBDIR"
+          git -C "$WORK_DIR/$SUBDIR" checkout "$COMMIT_SHA"
+          TAR_TIMESTAMP=$(git -C "$WORK_DIR/$SUBDIR" log -1 --no-show-signature --format='@%ct')
+
+          git -C "$WORK_DIR/$SUBDIR" config core.abbrev 8
+          git -C "$WORK_DIR/$SUBDIR" archive --format=tar HEAD --output="$WORK_DIR/$SUBDIR.tar.git"
+          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C "$WORK_DIR/$SUBDIR" -f "$WORK_DIR/$SUBDIR.tar.git" -r .git .gitmodules 2>/dev/null || true
+
+          rm -rf "$WORK_DIR/$SUBDIR"
+          mkdir "$WORK_DIR/$SUBDIR"
+          tar -C "$WORK_DIR/$SUBDIR" -xf "$WORK_DIR/$SUBDIR.tar.git"
+          (cd "$WORK_DIR/$SUBDIR" && git submodule update --init --recursive -- && rm -rf .git .gitmodules) || true
+          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name --mtime="$TAR_TIMESTAMP" -c -C "$WORK_DIR" "$SUBDIR" | zstd -T0 --ultra -20 -c > "$WORK_DIR/$FILE"
+          CHECKSUM=$(sha256sum "$WORK_DIR/$FILE" | cut -d ' ' -f 1)
+
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "commit_date=$COMMIT_DATE" >> $GITHUB_OUTPUT
+          echo "short_ver=$SHORT_VER" >> $GITHUB_OUTPUT
+          echo "long_ver=$LONG_VER" >> $GITHUB_OUTPUT
+          echo "commit_position=$COMMIT_POSITION" >> $GITHUB_OUTPUT
+          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
 
   update:
     needs:
