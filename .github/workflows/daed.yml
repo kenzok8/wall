@@ -3,11 +3,21 @@ name: "daed"
 on:
   repository_dispatch:
   workflow_dispatch:
+    inputs:
+      include_test:
+        description: "Track *-daed-test releases instead of latest stable"
+        required: false
+        default: "false"
   schedule:
     - cron: "0 */8 * * *"
 
+permissions:
+  contents: write
+
 env:
   TZ: Asia/Shanghai
+  DAED_REPO: https://github.com/ksong008/daed.git
+  DAED_API: https://api.github.com/repos/ksong008/daed/releases
 
 jobs:
   update-daed:
@@ -20,64 +30,157 @@ jobs:
           ref: main
           token: ${{ secrets.ACCESS_TOKEN }}
 
-      - name: Initialization environment
+      - name: Install dependencies
         run: |
           sudo timedatectl set-timezone "$TZ"
-          mkdir -p /tmp/daed-sync
+          sudo apt-get update -y
+          sudo apt-get install -y jq zstd
 
-      - name: Sync daed from sbwml
-        id: sync
+      - name: Check ksong008 daed release
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INCLUDE_TEST: ${{ github.event.inputs.include_test || 'false' }}
         run: |
           set -euo pipefail
 
-          cd /tmp/daed-sync
-          rm -rf openwrt_helloworld-5 openwrt_helloworld-v5.tar.gz
-          curl -fsSL "https://github.com/sbwml/openwrt_helloworld/archive/refs/heads/v5.tar.gz" -o openwrt_helloworld-v5.tar.gz
-          tar -xzf openwrt_helloworld-v5.tar.gz
+          release_json="$(curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "$DAED_API")"
 
-          cd "$GITHUB_WORKSPACE"
-          rm -rf daed
-          cp -a /tmp/daed-sync/openwrt_helloworld-5/daed ./daed
+          if [ "$INCLUDE_TEST" = "true" ]; then
+            release="$(printf '%s' "$release_json" | jq -c '
+              [
+                .[]
+                | select(.draft == false)
+                | select(.prerelease == false)
+              ][0]
+            ')"
+          else
+            release="$(printf '%s' "$release_json" | jq -c '
+              [
+                .[]
+                | select(.draft == false)
+                | select(.prerelease == false)
+                | select((.tag_name | contains("-daed-test")) | not)
+              ][0]
+            ')"
+          fi
 
-          pkg_version="$(sed -n 's/^PKG_VERSION:=//p' daed/Makefile | head -n1)"
-          web_version="$(sed -n 's/^PKG_WEB_VERSION:=//p' daed/Makefile | head -n1)"
-          source_version="$(sed -n 's/^PKG_SOURCE_VERSION:=//p' daed/Makefile | head -n1)"
-          mirror_hash="$(sed -n 's/^PKG_MIRROR_HASH:=//p' daed/Makefile | head -n1)"
-          web_hash="$(awk '
-            /^define Download\/daed-web/ { in_web = 1 }
-            in_web && /^[[:space:]]*HASH:=/ {
-              sub(/^[[:space:]]*HASH:=/, "")
-              print
-              exit
-            }
-            /^endef/ { in_web = 0 }
-          ' daed/Makefile)"
+          tag="$(printf '%s' "$release" | jq -r '.tag_name')"
+          published_at="$(printf '%s' "$release" | jq -r '.published_at')"
+          web_url="$(printf '%s' "$release" | jq -r '.assets[] | select(.name == "web.zip") | .browser_download_url' | head -n1)"
 
-          echo "daed version: $pkg_version"
-          echo "daed web version: $web_version"
-          echo "daed source version: $source_version"
-          echo "daed mirror hash: $mirror_hash"
-          echo "daed web hash: $web_hash"
+          if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+            echo "No non-test daed release found"
+            exit 1
+          fi
+          if [ -z "$web_url" ] || [ "$web_url" = "null" ]; then
+            echo "Release $tag does not contain web.zip"
+            exit 1
+          fi
 
-          if [ -z "$(git status --porcelain -- daed)" ]; then
+          source_version="$(git ls-remote --tags "$DAED_REPO" "refs/tags/${tag}^{}" | awk '{print $1}' | head -n1)"
+          if [ -z "$source_version" ]; then
+            source_version="$(git ls-remote --tags "$DAED_REPO" "refs/tags/${tag}" | awk '{print $1}' | head -n1)"
+          fi
+          if [ -z "$source_version" ]; then
+            echo "Unable to resolve commit for $tag"
+            exit 1
+          fi
+
+          pkg_version="$(TZ="$TZ" date -d "$published_at" +%Y.%m.%d)"
+          web_version="${tag#v}"
+
+          mkdir -p "$RUNNER_TEMP/daed-web"
+          curl -fsSL "$web_url" -o "$RUNNER_TEMP/daed-web/web.zip"
+          web_hash="$(sha256sum "$RUNNER_TEMP/daed-web/web.zip" | awk '{print $1}')"
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=$pkg_version" >> "$GITHUB_OUTPUT"
+          echo "web_version=$web_version" >> "$GITHUB_OUTPUT"
+          echo "source_version=$source_version" >> "$GITHUB_OUTPUT"
+          echo "web_hash=$web_hash" >> "$GITHUB_OUTPUT"
+
+          echo "latest daed release: $tag"
+          echo "PKG_VERSION: $pkg_version"
+          echo "PKG_WEB_VERSION: $web_version"
+          echo "PKG_SOURCE_VERSION: $source_version"
+          echo "web.zip HASH: $web_hash"
+
+      - name: Build OpenWrt mirror hash
+        id: mirror
+        run: |
+          set -euo pipefail
+
+          pkg_name="daed"
+          pkg_version="${{ steps.upstream.outputs.pkg_version }}"
+          source_version="${{ steps.upstream.outputs.source_version }}"
+          subdir="${pkg_name}-${pkg_version}"
+          work_dir="$RUNNER_TEMP/daed-openwrt-hash"
+
+          rm -rf "$work_dir"
+          mkdir -p "$work_dir"
+
+          git clone "$DAED_REPO" "$work_dir/src"
+          git -C "$work_dir/src" checkout "$source_version"
+          tar_timestamp="$(git -C "$work_dir/src" log -1 --no-show-signature --format='@%ct')"
+
+          git -C "$work_dir/src" config core.abbrev 8
+          git -C "$work_dir/src" archive --format=tar HEAD --output="$work_dir/${subdir}.tar.git"
+          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read \
+            -C "$work_dir/src" -f "$work_dir/${subdir}.tar.git" -r .git .gitmodules 2>/dev/null || true
+
+          mkdir "$work_dir/$subdir"
+          tar -C "$work_dir/$subdir" -xf "$work_dir/${subdir}.tar.git"
+          (
+            cd "$work_dir/$subdir"
+            git submodule update --init --recursive --
+            rm -rf .git .gitmodules
+          )
+
+          tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name --mtime="$tar_timestamp" \
+            -c -C "$work_dir" "$subdir" | zstd -T0 --ultra -20 -c > "$work_dir/${subdir}.tar.zst"
+
+          mirror_hash="$(sha256sum "$work_dir/${subdir}.tar.zst" | awk '{print $1}')"
+          echo "mirror_hash=$mirror_hash" >> "$GITHUB_OUTPUT"
+          echo "PKG_MIRROR_HASH: $mirror_hash"
+
+      - name: Update daed Makefile
+        id: update
+        env:
+          PKG_VERSION: ${{ steps.upstream.outputs.pkg_version }}
+          PKG_WEB_VERSION: ${{ steps.upstream.outputs.web_version }}
+          PKG_SOURCE_VERSION: ${{ steps.upstream.outputs.source_version }}
+          PKG_MIRROR_HASH: ${{ steps.mirror.outputs.mirror_hash }}
+          WEB_HASH: ${{ steps.upstream.outputs.web_hash }}
+        run: |
+          set -euo pipefail
+
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${PKG_VERSION}/" daed/Makefile
+          sed -i "s/^PKG_WEB_VERSION:=.*/PKG_WEB_VERSION:=${PKG_WEB_VERSION}/" daed/Makefile
+          sed -i "s/^PKG_SOURCE_VERSION:=.*/PKG_SOURCE_VERSION:=${PKG_SOURCE_VERSION}/" daed/Makefile
+          sed -i "s/^PKG_MIRROR_HASH:=.*/PKG_MIRROR_HASH:=${PKG_MIRROR_HASH}/" daed/Makefile
+          perl -0pi -e 's/(define Download\/daed-web.*?\n[ \t]*HASH:=)[^\n]+/${1}$ENV{WEB_HASH}/s' daed/Makefile
+
+          if [ -z "$(git status --porcelain -- daed/Makefile)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "daed is already up to date"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "version=$pkg_version" >> "$GITHUB_OUTPUT"
+            git diff -- daed/Makefile
           fi
 
       - name: Commit and Push daed Changes
-        if: steps.sync.outputs.changed == 'true' && !cancelled()
+        if: steps.update.outputs.changed == 'true' && !cancelled()
         run: |
           set -euo pipefail
 
-          cd "$GITHUB_WORKSPACE"
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-
-          git add daed
-          git commit -m "daed: update to ${{ steps.sync.outputs.version }}"
+          git add daed/Makefile
+          git commit -m "daed: update to ${{ steps.upstream.outputs.web_version }}"
 
           pushed=false
           for i in 1 2 3 4 5; do
