@@ -1,0 +1,100 @@
+name: "daed"
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */8 * * *"
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  update-daed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Initialization environment
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+          mkdir -p /tmp/daed-sync
+
+      - name: Sync daed from sbwml
+        id: sync
+        run: |
+          set -euo pipefail
+
+          cd /tmp/daed-sync
+          rm -rf openwrt_helloworld-5 openwrt_helloworld-v5.tar.gz
+          curl -fsSL "https://github.com/sbwml/openwrt_helloworld/archive/refs/heads/v5.tar.gz" -o openwrt_helloworld-v5.tar.gz
+          tar -xzf openwrt_helloworld-v5.tar.gz
+
+          cd "$GITHUB_WORKSPACE"
+          rm -rf daed
+          cp -a /tmp/daed-sync/openwrt_helloworld-5/daed ./daed
+
+          pkg_version="$(sed -n 's/^PKG_VERSION:=//p' daed/Makefile | head -n1)"
+          web_version="$(sed -n 's/^PKG_WEB_VERSION:=//p' daed/Makefile | head -n1)"
+          source_version="$(sed -n 's/^PKG_SOURCE_VERSION:=//p' daed/Makefile | head -n1)"
+          mirror_hash="$(sed -n 's/^PKG_MIRROR_HASH:=//p' daed/Makefile | head -n1)"
+          web_hash="$(awk '
+            /^define Download\/daed-web/ { in_web = 1 }
+            in_web && /^[[:space:]]*HASH:=/ {
+              sub(/^[[:space:]]*HASH:=/, "")
+              print
+              exit
+            }
+            /^endef/ { in_web = 0 }
+          ' daed/Makefile)"
+
+          echo "daed version: $pkg_version"
+          echo "daed web version: $web_version"
+          echo "daed source version: $source_version"
+          echo "daed mirror hash: $mirror_hash"
+          echo "daed web hash: $web_hash"
+
+          if [ -z "$(git status --porcelain -- daed)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "daed is already up to date"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$pkg_version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and Push daed Changes
+        if: steps.sync.outputs.changed == 'true' && !cancelled()
+        run: |
+          set -euo pipefail
+
+          cd "$GITHUB_WORKSPACE"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+          git add daed
+          git commit -m "daed: update to ${{ steps.sync.outputs.version }}"
+
+          pushed=false
+          for i in 1 2 3 4 5; do
+            if git push origin main; then
+              pushed=true
+              break
+            fi
+
+            echo "push failed at attempt $i, retrying after pull --rebase"
+            if ! git pull --rebase --autostash origin main; then
+              git rebase --abort || true
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "push failed after retries"
+            exit 1
+          fi
