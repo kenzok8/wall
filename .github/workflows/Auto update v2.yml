@@ -607,86 +607,42 @@ jobs:
           set -euo pipefail
 
           PKG_NAME=shadowsocks-libev
+          PKG_SOURCE_URL=https://github.com/shadowsocks/shadowsocks-libev.git
           NEW_VER=${{ steps.check_ss_libev.outputs.new_ver }}
           NEW_COMMIT=${{ steps.check_ss_libev.outputs.new_commit }}
           NEW_DATE=${{ steps.check_ss_libev.outputs.new_date }}
-          SDK_IMAGE="openwrt/sdk:x86_64-24.10.4"
 
-          HASH_WORK_DIR="$RUNNER_TEMP/shadowsocks-libev-hash"
-          rm -rf "$HASH_WORK_DIR"
-          mkdir -p "$HASH_WORK_DIR"
+          SUBDIR="${PKG_NAME}-${NEW_VER}"
+          FILE="${SUBDIR}.tar.zst"
+          WORK_DIR="${RUNNER_TEMP}/ss-libev-hash"
 
-          docker run --rm \
-            --user root \
-            -e NEW_VER="$NEW_VER" \
-            -e NEW_COMMIT="$NEW_COMMIT" \
-            -e NEW_DATE="$NEW_DATE" \
-            -v "$GITHUB_WORKSPACE:/work" \
-            -v "$HASH_WORK_DIR:/hashwork" \
-            "$SDK_IMAGE" \
-            bash -lc '
-              set -euo pipefail
+          rm -rf "$WORK_DIR"
+          mkdir -p "$WORK_DIR"
 
-              WORK_DIR=/work
-              HASH_WORK_DIR=/hashwork
-              SDK_DIR=/builder
-              TEMP_FEED_DIR="$HASH_WORK_DIR/.ss-libev-hash-feed"
-              TEMP_PKG_DIR="$TEMP_FEED_DIR/shadowsocks-libev"
-              TEMP_MAKEFILE="$TEMP_PKG_DIR/Makefile"
-              ARCHIVE_NAME="shadowsocks-libev-${NEW_VER}.tar.zst"
-              ARCHIVE_PATH="$SDK_DIR/dl/$ARCHIVE_NAME"
+          git clone "$PKG_SOURCE_URL" "$WORK_DIR/$SUBDIR"
+          git -C "$WORK_DIR/$SUBDIR" checkout "$NEW_COMMIT"
+          TAR_TIMESTAMP=$(git -C "$WORK_DIR/$SUBDIR" log -1 --no-show-signature --format='@%ct')
 
-              [ -d "$SDK_DIR/scripts" ] || "$SDK_DIR/setup.sh"
+          git -C "$WORK_DIR/$SUBDIR" config core.abbrev 8
+          git -C "$WORK_DIR/$SUBDIR" archive --format=tar HEAD --output="$WORK_DIR/${SUBDIR}.tar.git"
 
-              rm -rf "$TEMP_FEED_DIR"
-              rm -f "$HASH_WORK_DIR/shadowsocks-libev-hash.txt" \
-                "$HASH_WORK_DIR/shadowsocks-libev_make_download.log" \
-                "$HASH_WORK_DIR/shadowsocks-libev_make_check.log"
+          tar --numeric-owner --owner=0 --group=0 --ignore-failed-read \
+            -C "$WORK_DIR/$SUBDIR" \
+            -f "$WORK_DIR/${SUBDIR}.tar.git" -r .git .gitmodules 2>/dev/null || true
 
-              mkdir -p "$TEMP_FEED_DIR"
-              cp -a "$WORK_DIR/shadowsocks-libev" "$TEMP_PKG_DIR"
+          rm -rf "$WORK_DIR/$SUBDIR"
+          mkdir "$WORK_DIR/$SUBDIR"
+          tar -C "$WORK_DIR/$SUBDIR" -xf "$WORK_DIR/${SUBDIR}.tar.git"
+          (cd "$WORK_DIR/$SUBDIR" && git submodule update --init --recursive -- && rm -rf .git .gitmodules) || true
 
-              sed -i "/^PKG_VERSION:=/c\PKG_VERSION:=$NEW_VER" "$TEMP_MAKEFILE"
-              sed -i "/^PKG_SOURCE_DATE:=/c\PKG_SOURCE_DATE:=$NEW_DATE" "$TEMP_MAKEFILE"
-              sed -i "/^PKG_SOURCE_VERSION:=/c\PKG_SOURCE_VERSION:=$NEW_COMMIT" "$TEMP_MAKEFILE"
-              sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=0000000000000000000000000000000000000000000000000000000000000000" "$TEMP_MAKEFILE"
+          LC_ALL=C tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+            --mtime="$TAR_TIMESTAMP" -c -C "$WORK_DIR" "$SUBDIR" \
+            | zstd -T0 --ultra -20 -c > "$WORK_DIR/$FILE"
 
-              cd "$SDK_DIR"
-              rm -f "$SDK_DIR"/dl/shadowsocks-libev-*.tar.zst "$SDK_DIR"/dl/shadowsocks-libev-*.tar.zst.* || true
-
-              cp feeds.conf.default feeds.conf
-              printf "%s\n" "src-link ss_libev_hash $TEMP_FEED_DIR" >> feeds.conf
-              ./scripts/feeds update ss_libev_hash
-              ./scripts/feeds install -p ss_libev_hash -f shadowsocks-libev
-
-              export TERM=xterm
-              [ -f .config ] || touch .config
-              make defconfig > /dev/null
-
-              make package/feeds/ss_libev_hash/shadowsocks-libev/download V=s DOWNLOAD_MIRROR=0 > "$HASH_WORK_DIR/shadowsocks-libev_make_download.log" 2>&1 || true
-              if [ ! -s "$ARCHIVE_PATH" ]; then
-                echo "未生成预期源码包: $ARCHIVE_PATH"
-                cat "$HASH_WORK_DIR/shadowsocks-libev_make_download.log"
-                exit 1
-              fi
-
-              REAL_HASH=$(sha256sum "$ARCHIVE_PATH" | awk "{print \$1}")
-              sed -i "/^PKG_MIRROR_HASH:=/c\PKG_MIRROR_HASH:=$REAL_HASH" "$TEMP_MAKEFILE"
-
-              make package/feeds/ss_libev_hash/shadowsocks-libev/check V=s DOWNLOAD_MIRROR=0 > "$HASH_WORK_DIR/shadowsocks-libev_make_check.log" 2>&1 || {
-                echo "二次校验失败，停止提交（避免写入错误 hash）"
-                cat "$HASH_WORK_DIR/shadowsocks-libev_make_download.log"
-                cat "$HASH_WORK_DIR/shadowsocks-libev_make_check.log"
-                exit 1
-              }
-
-              echo "$REAL_HASH" > "$HASH_WORK_DIR/shadowsocks-libev-hash.txt"
-              chmod -R a+rwX "$HASH_WORK_DIR"
-            '
-
-          PKG_HASH=$(cat "$HASH_WORK_DIR/shadowsocks-libev-hash.txt")
+          PKG_HASH=$(sha256sum "$WORK_DIR/$FILE" | awk '{print $1}')
 
           echo "pkg_hash=$PKG_HASH" >> $GITHUB_OUTPUT
+          echo "hash: $PKG_HASH"
 
       - name: Update shadowsocks-libev Makefile
         id: update_ss_libev
