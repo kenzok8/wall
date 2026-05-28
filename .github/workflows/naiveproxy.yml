@@ -104,10 +104,10 @@ jobs:
             exit 1
           fi
           
-          # 获取最新版本（包括Pre-release），增加更多调试信息
+          # 获取最新稳定版本（排除Pre-release）
           New_PKG_VERSION=$(echo "$api_response" | jq -r '
             if type == "array" and length > 0 then
-              .[0].tag_name | sub("^v"; "")
+              map(select(.prerelease == false)) | .[0].tag_name | sub("^v"; "")
             else
               error("API返回空数组或非数组")
             end
@@ -117,7 +117,7 @@ jobs:
           if [ $? -ne 0 ] || [ -z "$New_PKG_VERSION" ]; then
             echo "❌ 无法解析版本信息，尝试备用方法..."
             # 备用方法：获取第一个release的tag_name
-            New_PKG_VERSION=$(echo "$api_response" | jq -r '.[0].tag_name // empty' | sed 's/^v//')
+            New_PKG_VERSION=$(echo "$api_response" | jq -r 'map(select(.prerelease == false)) | .[0].tag_name // empty' | sed 's/^v//')
             
             if [ -z "$New_PKG_VERSION" ]; then
               echo "❌ 备用方法也失败了，退出"
