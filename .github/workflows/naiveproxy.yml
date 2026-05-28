@@ -55,7 +55,7 @@ jobs:
           cd $GITHUB_WORKSPACE/naiveproxy
           
           # 检查版本 - 增加错误处理和调试信息
-          Old_PKG_VERSION=$(sed -n '/^PKG_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
+          Old_PKG_VERSION=$(sed -n '/^PKG_REAL_VERSION:=/p' Makefile | awk -F '=' '{print $2}')
           
           echo "获取naiveproxy最新版本（包括Pre-release）..."
           
@@ -133,7 +133,7 @@ jobs:
             echo "检测到新版本，开始更新所有架构..."
             
             # 更新版本号
-            sed -i "/^PKG_VERSION:=/c PKG_VERSION:=$New_PKG_VERSION" Makefile
+            sed -i "/^PKG_REAL_VERSION:=/c PKG_REAL_VERSION:=$New_PKG_VERSION" Makefile
             echo "NAIVEPROXY_UPDATED=true" >> $GITHUB_ENV
             echo "NAIVEPROXY_VERSION=$New_PKG_VERSION" >> $GITHUB_ENV
             
