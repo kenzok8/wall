@@ -65,15 +65,22 @@ def main() -> int:
     tag = release["tag_name"]
     version = tag.removeprefix("v")
 
-    assets = {asset["name"]: asset["browser_download_url"] for asset in release.get("assets", [])}
+    assets = {asset["name"]: asset for asset in release.get("assets", [])}
     hashes = {}
     for upx_arch in ARCHES:
         name = f"upx-{version}-{upx_arch}_linux.tar.xz"
-        url = assets.get(name)
-        if not url:
+        asset = assets.get(name)
+        if not asset:
             raise SystemExit(f"missing release asset: {name}")
-        print(f"hashing {name}", file=sys.stderr)
-        hashes[upx_arch] = sha256_url(url)
+        # Prefer the sha256 the API already provides; avoids downloading every
+        # tarball (slow and prone to download-CDN 504s). Fall back to download
+        # only when an older release has no digest field.
+        digest = asset.get("digest") or ""
+        if digest.startswith("sha256:"):
+            hashes[upx_arch] = digest.split(":", 1)[1]
+        else:
+            print(f"hashing {name} (no API digest)", file=sys.stderr)
+            hashes[upx_arch] = sha256_url(asset["browser_download_url"])
 
     text = MAKEFILE.read_text()
     text = re.sub(r"^PKG_VERSION:=.*$", f"PKG_VERSION:={version}", text, count=1, flags=re.M)
