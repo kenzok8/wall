@@ -588,16 +588,15 @@ jobs:
           if [ -z "$NEW_VER" ] || [ -z "$NEW_COMMIT" ] || [ -z "$NEW_DATE" ]; then
             echo "status=failure" >> $GITHUB_OUTPUT
             echo "未能获取 shadowsocks-libev 上游版本/提交/日期，跳过更新（回退保护）"
+          elif [ "$OLD_VER" = "$NEW_VER" ] && [ "$OLD_COMMIT" = "$NEW_COMMIT" ]; then
+            echo "status=skip" >> $GITHUB_OUTPUT
+            echo "版本和 commit 未变，跳过更新（避免 PKG_SOURCE_DATE 空转提交）"
           else
             echo "status=success" >> $GITHUB_OUTPUT
             echo "new_ver=$NEW_VER" >> $GITHUB_OUTPUT
             echo "new_commit=$NEW_COMMIT" >> $GITHUB_OUTPUT
             echo "new_date=$NEW_DATE" >> $GITHUB_OUTPUT
             echo "old_hash=$OLD_HASH" >> $GITHUB_OUTPUT
-
-            if [ "$OLD_VER" = "$NEW_VER" ] && [ "$OLD_COMMIT" = "$NEW_COMMIT" ]; then
-              echo "版本和 commit 相同，重新校验 mirror hash"
-            fi
           fi
 
       - name: Build mirror hash for shadowsocks-libev
