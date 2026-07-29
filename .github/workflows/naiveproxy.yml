@@ -19,10 +19,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Initialization environment
-        run: |
-          sudo timedatectl set-timezone "$TZ"
-
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2.1.0
         with:
@@ -48,7 +44,6 @@ jobs:
       - name: Initialization environment
         run: |
           cd && mkdir -p pack && cd pack
-          sudo timedatectl set-timezone "$TZ"
 
       - name: Check version and update all architectures
         run: |

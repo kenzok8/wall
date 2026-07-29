@@ -15,6 +15,10 @@ on:
         description: 'packages'
         required: false
         default: 'false'
+      ssh:
+        description: 'SSH connection'
+        required: false
+        default: 'false'
     
 env:
   TZ: Asia/Shanghai
@@ -28,10 +32,6 @@ jobs:
         with:
           ref: 'main'
           token: ${{ secrets.ACCESS_TOKEN }}
-
-      - name: Initialization environment
-        run: |
-          sudo timedatectl set-timezone "$TZ"
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2.1.0
@@ -659,7 +659,6 @@ jobs:
 
       - name: Initialization environment
         run: |
-          sudo timedatectl set-timezone "$TZ"
           sudo apt-get update -y
           sudo apt-get install -y zstd
 
