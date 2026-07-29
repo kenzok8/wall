@@ -55,7 +55,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        pakcages: [dns2tcp,ddns-go,dns2socks-rust,docker,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,smartdns,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview,tuic-client]
+        pakcages: [dns2tcp,ddns-go,dns2socks-rust,docker,dockerd,filebrowser,gost,mosdns,lua-neturl,lucky,smartdns,UnblockNeteaseMusic,brook,hysteria,ipt2socks,microsocks,sing-box,v2ray-core,v2ray-plugin,xray-core,xray-plugin,v2ray-geoip,v2ray-geosite,geoview]
         include:
           - pakcages: dns2tcp
             folder: dns2tcp
@@ -399,16 +399,6 @@ jobs:
           #   release_download_url: https://codeload.github.com/kenzok8/tcping/tar.gz/
           #   file_name:
 
-          - pakcages: tuic-client
-            folder: tuic-client
-            version_line: 8
-            hash_line: 13
-            version_head: PKG_VERSION:=
-            hash_head: PKG_HASH:=
-            release_api_command: curl -sL "https://api.github.com/repos/Itsusinn/tuic/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g' | awk -F 'v' '{print $2}'
-            release_download_url: https://codeload.github.com/Itsusinn/tuic/tar.gz/v
-            file_name:
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -547,6 +537,114 @@ jobs:
           else
             echo "没有检测到 ${{ matrix.pakcages }} 文件变更"
           fi
+
+  job_auto_update_tuic:
+    if: ${{ always() }}
+    needs: job_init
+    runs-on: ubuntu-latest
+    name: Auto-update-tuic-client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: 'main'
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Check TUIC upstream
+        id: check_tuic
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE_JSON="$RUNNER_TEMP/tuic-release.json"
+          curl -fsSL \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/Itsusinn/tuic/releases/latest \
+            -o "$RELEASE_JSON"
+
+          NEW_TAG=$(jq -r '.tag_name // empty' "$RELEASE_JSON")
+          NEW_UPSTREAM_VERSION=${NEW_TAG#v}
+          NEW_VERSION=$(printf '%s\n' "$NEW_UPSTREAM_VERSION" | sed -E \
+            -e 's/-dev([0-9]+)$/_pre\1/' \
+            -e 's/-alpha([0-9]+)$/_alpha\1/' \
+            -e 's/-beta([0-9]+)$/_beta\1/' \
+            -e 's/-rc([0-9]+)$/_rc\1/')
+          OLD_UPSTREAM_VERSION=$(sed -n 's/^PKG_UPSTREAM_VERSION:=//p' tuic-client/Makefile)
+
+          if [ -z "$NEW_UPSTREAM_VERSION" ] || [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" != "${NEW_VERSION#*-}" ]; then
+            echo "无法解析 TUIC 上游版本，跳过更新"
+            echo "status=failure" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$OLD_UPSTREAM_VERSION" = "$NEW_UPSTREAM_VERSION" ]; then
+            echo "TUIC 已是最新版本 $NEW_UPSTREAM_VERSION"
+            echo "status=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          asset_hash() {
+            jq -r --arg name "$1" \
+              '.assets[] | select(.name == $name) | .digest // empty' \
+              "$RELEASE_JSON" | sed 's/^sha256://'
+          }
+
+          HASH_AARCH64=$(asset_hash tuic-client-aarch64-linux-musl)
+          HASH_ARMV7=$(asset_hash tuic-client-armv7-linux-musl)
+          HASH_ARMV7HF=$(asset_hash tuic-client-armv7-linux-muslhf)
+          HASH_I686=$(asset_hash tuic-client-i686-linux-musl)
+          HASH_X86_64=$(asset_hash tuic-client-x86_64-linux-musl)
+
+          for HASH in "$HASH_AARCH64" "$HASH_ARMV7" "$HASH_ARMV7HF" "$HASH_I686" "$HASH_X86_64"; do
+            if ! [[ "$HASH" =~ ^[0-9a-f]{64}$ ]]; then
+              echo "TUIC Release 缺少可用的 musl 文件或 SHA256，停止更新"
+              exit 1
+            fi
+          done
+
+          {
+            echo "status=success"
+            echo "upstream_version=$NEW_UPSTREAM_VERSION"
+            echo "version=$NEW_VERSION"
+            echo "hash_aarch64=$HASH_AARCH64"
+            echo "hash_armv7=$HASH_ARMV7"
+            echo "hash_armv7hf=$HASH_ARMV7HF"
+            echo "hash_i686=$HASH_I686"
+            echo "hash_x86_64=$HASH_X86_64"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update TUIC package
+        if: steps.check_tuic.outputs.status == 'success' && !cancelled()
+        run: |
+          sed -i "/^PKG_UPSTREAM_VERSION:=/c\PKG_UPSTREAM_VERSION:=${{ steps.check_tuic.outputs.upstream_version }}" tuic-client/Makefile
+          sed -i "/^PKG_VERSION:=/c\PKG_VERSION:=${{ steps.check_tuic.outputs.version }}" tuic-client/Makefile
+          sed -i "/^TUIC_HASH_AARCH64:=/c\TUIC_HASH_AARCH64:=${{ steps.check_tuic.outputs.hash_aarch64 }}" tuic-client/Makefile
+          sed -i "/^TUIC_HASH_ARMV7:=/c\TUIC_HASH_ARMV7:=${{ steps.check_tuic.outputs.hash_armv7 }}" tuic-client/Makefile
+          sed -i "/^TUIC_HASH_ARMV7HF:=/c\TUIC_HASH_ARMV7HF:=${{ steps.check_tuic.outputs.hash_armv7hf }}" tuic-client/Makefile
+          sed -i "/^TUIC_HASH_I686:=/c\TUIC_HASH_I686:=${{ steps.check_tuic.outputs.hash_i686 }}" tuic-client/Makefile
+          sed -i "/^TUIC_HASH_X86_64:=/c\TUIC_HASH_X86_64:=${{ steps.check_tuic.outputs.hash_x86_64 }}" tuic-client/Makefile
+
+      - name: Commit and push TUIC changes
+        if: steps.check_tuic.outputs.status == 'success' && !cancelled()
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add tuic-client/Makefile
+          git commit -m "tuic-client: update to ${{ steps.check_tuic.outputs.upstream_version }}"
+
+          for i in 1 2 3 4 5; do
+            if git push origin main; then
+              exit 0
+            fi
+
+            echo "push 失败（第 $i 次），尝试 pull --rebase 后重试..."
+            git pull --rebase --autostash origin main
+            sleep 2
+          done
+
+          echo "多次 push 重试后仍失败，终止任务"
+          exit 1
 
   job_auto_update_shadowsocks_libev:
     if: ${{ always() }}
