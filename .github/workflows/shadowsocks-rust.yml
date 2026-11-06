@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2.1.0
@@ -39,7 +39,7 @@ jobs:
     name: update-shadowsocks-rust-all-arch
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Initialization environment
         run: |
