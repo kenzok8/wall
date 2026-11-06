@@ -26,7 +26,7 @@ jobs:
 
       - name: Sync maintained fork packages
         env:
-          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
           SELECTED_PACKAGES: ${{ github.event.inputs.packages }}
         run: |
           set -euo pipefail
