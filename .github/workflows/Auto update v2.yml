@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: 'main'
           token: ${{ secrets.ACCESS_TOKEN }}
@@ -401,7 +401,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: 'main'
           token: ${{ secrets.ACCESS_TOKEN }}
@@ -544,7 +544,7 @@ jobs:
     name: Auto-update-tuic-client
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: 'main'
           token: ${{ secrets.ACCESS_TOKEN }}
@@ -652,7 +652,7 @@ jobs:
     name: Auto-update-shadowsocks-libev
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: 'main'
           token: ${{ secrets.ACCESS_TOKEN }}

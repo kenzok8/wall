@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: SSH connection to Actions
         uses: kenzok78/ssh-action@master
@@ -32,7 +32,7 @@ jobs:
     name: update-shadow-tls-all-arch
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Check version and update all architectures
         run: |
