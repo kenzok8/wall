@@ -25,6 +25,8 @@ jobs:
           python-version: '3.x'
 
       - name: Update upx-static Makefile
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 .github/scripts/update_upx_static.py

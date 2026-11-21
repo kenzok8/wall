@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -26,7 +27,13 @@ ARCHES = {
 
 
 def fetch_json(url: str):
-    req = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
+    headers = {"Accept": "application/vnd.github+json"}
+    # Unauthenticated API calls share 60 req/hour per runner egress IP and
+    # fail with 403 "rate limit exceeded"; the workflow passes GITHUB_TOKEN.
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req) as resp:
         return json.load(resp)
 
