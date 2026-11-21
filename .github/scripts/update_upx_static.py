@@ -11,6 +11,7 @@ from pathlib import Path
 
 API_URL = "https://api.github.com/repos/upx/upx/releases/latest"
 MAKEFILE = Path("upx-static/Makefile")
+UPX_MAKEFILE = Path("upx/Makefile")
 
 ARCHES = {
     "amd64": "x86_64",
@@ -67,6 +68,8 @@ def render_hash_block(hashes):
 def main() -> int:
     if not MAKEFILE.exists():
         raise SystemExit(f"missing makefile: {MAKEFILE}")
+    if not UPX_MAKEFILE.exists():
+        raise SystemExit(f"missing makefile: {UPX_MAKEFILE}")
 
     release = fetch_json(API_URL)
     tag = release["tag_name"]
@@ -89,6 +92,18 @@ def main() -> int:
             print(f"hashing {name} (no API digest)", file=sys.stderr)
             hashes[upx_arch] = sha256_url(asset["browser_download_url"])
 
+    # Source package (upx): single hash for the source tarball.
+    src_name = f"upx-{version}-src.tar.xz"
+    src_asset = assets.get(src_name)
+    if not src_asset:
+        raise SystemExit(f"missing release asset: {src_name}")
+    src_digest = src_asset.get("digest") or ""
+    if src_digest.startswith("sha256:"):
+        src_hash = src_digest.split(":", 1)[1]
+    else:
+        print(f"hashing {src_name} (no API digest)", file=sys.stderr)
+        src_hash = sha256_url(src_asset["browser_download_url"])
+
     text = MAKEFILE.read_text()
     text = re.sub(r"^PKG_VERSION:=.*$", f"PKG_VERSION:={version}", text, count=1, flags=re.M)
     text = re.sub(r"^PKG_RELEASE:=.*$", "PKG_RELEASE:=1", text, count=1, flags=re.M)
@@ -102,6 +117,13 @@ def main() -> int:
     )
     MAKEFILE.write_text(text)
     print(f"updated {MAKEFILE} to {version}")
+
+    upx_text = UPX_MAKEFILE.read_text()
+    upx_text = re.sub(r"^PKG_VERSION:=.*$", f"PKG_VERSION:={version}", upx_text, count=1, flags=re.M)
+    upx_text = re.sub(r"^PKG_RELEASE:=.*$", "PKG_RELEASE:=1", upx_text, count=1, flags=re.M)
+    upx_text = re.sub(r"^PKG_HASH:=.*$", f"PKG_HASH:={src_hash}", upx_text, count=1, flags=re.M)
+    UPX_MAKEFILE.write_text(upx_text)
+    print(f"updated {UPX_MAKEFILE} to {version}")
     return 0
 
 

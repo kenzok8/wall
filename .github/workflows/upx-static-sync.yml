@@ -1,4 +1,4 @@
-name: upx-static sync from upstream
+name: upx packages sync from upstream
 
 on:
   workflow_dispatch:
@@ -24,24 +24,25 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Update upx-static Makefile
+      - name: Update upx Makefiles
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 .github/scripts/update_upx_static.py
           grep -E "^PKG_(VERSION|RELEASE|SOURCE_VERSION|HASH)" upx-static/Makefile || true
+          grep -E "^PKG_(VERSION|RELEASE|HASH)" upx/Makefile || true
 
       - name: Commit and push
         run: |
           set -euo pipefail
-          if git diff --quiet -- upx-static/Makefile; then
-            echo "upx-static already latest"
+          if git diff --quiet -- upx/Makefile upx-static/Makefile; then
+            echo "upx packages already latest"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           version=$(sed -n 's/^PKG_VERSION:=//p' upx-static/Makefile)
-          git add upx-static/Makefile
-          git commit -m "upx-static: sync to v${version}"
+          git add upx/Makefile upx-static/Makefile
+          git commit -m "upx: sync to v${version}"
           git push
