@@ -1,4 +1,8 @@
-name: local forks sync
+# Syncs the 12 self-maintained kenzok8 forks (v2dat, trojan-go, trojan-plus,
+# redsocks, trojan, tcping, dns2socks, pdnsd, simple-obfs,
+# shadowsocksr-libev, ssocks, ucl) from their latest kenzok8 releases.
+# Third-party packages are handled by "Auto update v2".
+name: maintained forks sync
 
 on:
   workflow_dispatch:
@@ -109,6 +113,8 @@ jobs:
           sync_pkg "pdnsd-alt" "pdnsd-alt" "kenzok8/pdnsd" "none" "https://codeload.github.com/kenzok8/pdnsd/tar.gz/\$(PKG_VERSION)?" ""
           sync_pkg "ucl" "ucl" "kenzok8/ucl" "v" "https://codeload.github.com/kenzok8/ucl/tar.gz/v\$(PKG_VERSION)?" ""
           sync_pkg "v2dat" "v2dat" "kenzok8/v2dat" "v" "https://codeload.github.com/kenzok8/v2dat/tar.gz/v\$(PKG_VERSION)?" "github.com/kenzok8/v2dat"
+          sync_pkg "trojan-plus" "trojan-plus" "kenzok8/trojan-plus" "v" "https://codeload.github.com/kenzok8/trojan-plus/tar.gz/v\$(PKG_VERSION)?" ""
+          sync_pkg "dns2socks" "dns2socks" "kenzok8/dns2socks" "v" "https://codeload.github.com/kenzok8/dns2socks/tar.gz/v\$(PKG_VERSION)?" ""
 
       - name: Commit and push when changed
         run: |
@@ -119,6 +125,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add redsocks2/Makefile trojan-go/Makefile trojan/Makefile shadowsocksr-libev/Makefile simple-obfs/Makefile ssocks/Makefile tcping/Makefile pdnsd-alt/Makefile ucl/Makefile v2dat/Makefile
+          git add redsocks2/Makefile trojan-go/Makefile trojan/Makefile shadowsocksr-libev/Makefile simple-obfs/Makefile ssocks/Makefile tcping/Makefile pdnsd-alt/Makefile ucl/Makefile v2dat/Makefile trojan-plus/Makefile dns2socks/Makefile
           git commit -m "sync: update maintained fork packages from kenzok8 releases"
           git push
